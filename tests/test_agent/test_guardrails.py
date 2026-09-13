@@ -2,9 +2,8 @@
 Unit tests for PII scrubbing and Anti-Hallucination Guardrails.
 """
 
-import pytest
-from src.agent.guardrails import sanitize_pii, validate_anti_hallucination
 from src.agent.agent import FleetPulseAgent
+from src.agent.guardrails import sanitize_pii, validate_anti_hallucination
 from src.agent.llm_adapter import BaseLLMAdapter, LLMMessage, LLMResponse
 
 
@@ -112,7 +111,7 @@ class TestGuardrails:
         agent = FleetPulseAgent(llm=mock_llm)
 
         user_prompt_with_pii = "Check the phone for user bob@example.com, phone 555-123-4567, device DEV-102."
-        res = agent.chat(user_prompt_with_pii)
+        agent.chat(user_prompt_with_pii)
 
         # Inspect history: the user message stored in LLM context MUST be sanitized
         user_history_entry = agent._conversation_history[1]

@@ -6,10 +6,8 @@ PySpark StructType definitions for all Delta tables used in the pipeline.
 
 from pyspark.sql.types import (
     ArrayType,
-    DoubleType,
     FloatType,
     IntegerType,
-    LongType,
     StringType,
     StructField,
     StructType,

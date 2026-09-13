@@ -5,13 +5,11 @@ Stateless transform functions for feature engineering.
 All functions operate on PySpark DataFrames or columns.
 """
 
-from typing import List
 
 import numpy as np
 from pyspark.sql import Column, DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import FloatType
-
 
 # ==============================================================================
 # Rolling Slope (Linear Regression over a window)
@@ -27,7 +25,7 @@ def rolling_slope_udf():
         df.withColumn("fade_rate", slope_fn(F.collect_list("capacity_ah")))
     """
 
-    def _compute_slope(values: List[float]) -> float | None:
+    def _compute_slope(values: list[float]) -> float | None:
         if not values or len(values) < 2:
             return None
         arr = np.array(values, dtype=np.float64)
@@ -62,7 +60,7 @@ def ewma_udf(alpha: float = 0.3):
         alpha: Smoothing factor (0 < alpha <= 1). Higher = more weight on recent values.
     """
 
-    def _compute_ewma(values: List[float]) -> float | None:
+    def _compute_ewma(values: list[float]) -> float | None:
         if not values:
             return None
         arr = np.array(values, dtype=np.float64)

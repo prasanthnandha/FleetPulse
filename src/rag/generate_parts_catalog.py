@@ -10,12 +10,10 @@ Usage:
     python -m src.rag.generate_parts_catalog
 """
 
-import json
-import os
-import random
 import hashlib
+import json
+import random
 from pathlib import Path
-
 
 # ==============================================================================
 # Device & Component Definitions

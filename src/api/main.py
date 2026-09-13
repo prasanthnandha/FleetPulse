@@ -14,6 +14,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from src.api.routes.chat import router as chat_router
+from src.api.routes.fleet import router as fleet_router
+from src.api.routes.health import router as health_router
+
 load_dotenv()
 
 app = FastAPI(
@@ -35,9 +39,6 @@ app.add_middleware(
 )
 
 # ── Routes ───────────────────────────────────────────────────────────────
-from src.api.routes.health import router as health_router
-from src.api.routes.fleet import router as fleet_router
-from src.api.routes.chat import router as chat_router
 
 app.include_router(health_router, prefix="/api")
 app.include_router(fleet_router, prefix="/api")

@@ -66,10 +66,10 @@ class TicketTool:
             "actions": [
                 f"1. Order replacement {component.replace('_', ' ')} (Part: {part_number or 'TBD'})" if part_number else f"1. Identify replacement {component.replace('_', ' ')} part",
                 f"2. Schedule {repair_time or '?'}-hour repair window with device owner",
-                f"3. Back up device data before repair",
+                "3. Back up device data before repair",
                 f"4. Perform {component.replace('_', ' ')} replacement following service manual procedure",
-                f"5. Run post-repair diagnostics and MDM compliance check",
-                f"6. Return device to user and close ticket",
+                "5. Run post-repair diagnostics and MDM compliance check",
+                "6. Return device to user and close ticket",
             ],
 
             "estimated_downtime_hours": repair_time or 2.0,
@@ -117,36 +117,36 @@ class TicketTool:
         repair_time, cost, notes,
     ) -> str:
         lines = [
-            f"═══════════════════════════════════════════════",
+            "═══════════════════════════════════════════════",
             f"  REMEDIATION TICKET — {ticket_id}",
-            f"═══════════════════════════════════════════════",
-            f"",
+            "═══════════════════════════════════════════════",
+            "",
             f"  Priority:    {priority}",
-            f"  Status:      Draft",
+            "  Status:      Draft",
             f"  Created:     {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
-            f"",
-            f"  ── Device ──────────────────────────────────",
+            "",
+            "  ── Device ──────────────────────────────────",
             f"  ID:          {device_id}",
             f"  Model:       {device_model}",
             f"  Fleet:       {fleet or 'N/A'}",
             f"  Component:   {component.replace('_', ' ').title()}",
-            f"",
-            f"  ── Issue ───────────────────────────────────",
+            "",
+            "  ── Issue ───────────────────────────────────",
             f"  Summary:     {issue_summary}",
             f"  RUL:         {rul_days or 'N/A'} days",
-            f"",
-            f"  ── Repair Info ─────────────────────────────",
+            "",
+            "  ── Repair Info ─────────────────────────────",
             f"  Part Number: {part_number or 'TBD'}",
             f"  Supplier:    {supplier or 'TBD'}",
             f"  Repair Time: {repair_time or 'TBD'} hours",
-            f"  Est. Cost:   ${cost:.2f}" if cost else f"  Est. Cost:   TBD",
-            f"",
+            f"  Est. Cost:   ${cost:.2f}" if cost else "  Est. Cost:   TBD",
+            "",
         ]
         if notes:
             lines.extend([
-                f"  ── Notes ───────────────────────────────────",
+                "  ── Notes ───────────────────────────────────",
                 f"  {notes}",
-                f"",
+                "",
             ])
-        lines.append(f"═══════════════════════════════════════════════")
+        lines.append("═══════════════════════════════════════════════")
         return "\n".join(lines)

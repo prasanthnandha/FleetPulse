@@ -5,7 +5,6 @@ Agent tool that calls the Model Serving endpoint (or local model)
 for fleet-level and device-level predictions.
 """
 
-import json
 import os
 from typing import Any
 

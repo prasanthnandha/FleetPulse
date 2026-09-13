@@ -11,7 +11,6 @@ Usage:
 """
 
 import argparse
-import json
 
 import mlflow
 import numpy as np
@@ -127,7 +126,7 @@ def compare_models(experiment_name: str, feature_table: str, use_spark: bool = T
         return
 
     # Prepare holdout data (last 20%)
-    from src.models.train_rul_model import FEATURE_COLUMNS, prepare_data
+    from src.models.train_rul_model import prepare_data
 
     target_col = "remaining_useful_life_days"
     if target_col not in df.columns:

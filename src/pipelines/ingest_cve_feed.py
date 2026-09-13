@@ -14,16 +14,12 @@ Usage (local/standalone):
 """
 
 import argparse
-import hashlib
 import random
 import time
 from datetime import datetime, timedelta
 
 import requests
 from pyspark.sql import Row, SparkSession
-from pyspark.sql import functions as F
-from pyspark.sql.types import FloatType, IntegerType
-
 
 # ==============================================================================
 # NVD API Client

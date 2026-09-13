@@ -2,7 +2,7 @@ import pytest
 
 pyspark = pytest.importorskip("pyspark", reason="PySpark required for pipeline schema definitions")
 
-from src.pipelines.utils.schema import (
+from src.pipelines.utils.schema import (  # noqa: E402
     BATTERY_CYCLES_SCHEMA,
     CVE_PATCHES_SCHEMA,
     DEVICE_HEALTH_FEATURES_SCHEMA,

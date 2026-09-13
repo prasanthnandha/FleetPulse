@@ -15,6 +15,7 @@ Usage (local):
 """
 
 import argparse
+import json
 from datetime import datetime
 
 import mlflow
@@ -23,12 +24,10 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import (
-    classification_report,
     precision_recall_fscore_support,
     roc_auc_score,
 )
 from sklearn.preprocessing import StandardScaler
-
 
 # ==============================================================================
 # Feature Configuration
@@ -217,7 +216,7 @@ def train_isolation_forest(
                 print(f"Model registration skipped: {e}")
 
         print(f"\n{'='*60}")
-        print(f"Isolation Forest Training Complete")
+        print("Isolation Forest Training Complete")
         print(f"Run ID: {run.info.run_id}")
         print(f"Anomalies detected: {n_anomalies_detected}/{len(predictions)} "
               f"({n_anomalies_detected/len(predictions)*100:.1f}%)")
@@ -238,8 +237,6 @@ def train_isolation_forest(
         }
 
 
-# Need json import for feature_names logging
-import json
 
 
 def run_training(

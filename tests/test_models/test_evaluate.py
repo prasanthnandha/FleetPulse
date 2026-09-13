@@ -3,7 +3,6 @@ Unit tests for model prediction, serving handler, and evaluation metrics.
 """
 
 import numpy as np
-import pytest
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src.models.serve.predict import FleetPulsePredictor

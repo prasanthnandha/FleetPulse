@@ -2,7 +2,6 @@
 Integration tests for FastAPI endpoints: health, fleet data, and chat.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app

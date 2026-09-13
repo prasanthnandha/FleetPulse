@@ -18,7 +18,6 @@ Usage (local):
 """
 
 import argparse
-import json
 from datetime import datetime
 
 import mlflow
@@ -26,9 +25,8 @@ import mlflow.xgboost
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 
 # ==============================================================================
 # Feature Configuration
@@ -130,8 +128,8 @@ def train_xgboost_model(
     if hyperparams:
         params.update(hyperparams)
 
-    # Extract early_stopping_rounds before passing to XGBoost constructor
-    early_stopping = params.pop("early_stopping_rounds", 50)
+    # Pop early_stopping_rounds to prevent it being passed to XGBoost constructor
+    params.pop("early_stopping_rounds", 50)
 
     mlflow.set_experiment(experiment_name)
 

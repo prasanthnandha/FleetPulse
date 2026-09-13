@@ -12,7 +12,6 @@ Usage (Databricks):
 """
 
 import argparse
-import os
 import time
 
 from databricks.sdk import WorkspaceClient
@@ -63,17 +62,17 @@ def create_or_update_index(
                 break
             print(f"  Waiting for endpoint... (status: {endpoint.endpoint_status})")
             time.sleep(10)
-        print(f"  Endpoint created and online.")
+        print("  Endpoint created and online.")
 
     # ── Create or sync index ─────────────────────────────────────────────
     print(f"Setting up index '{index_name}'...")
 
     try:
         # Check if index exists
-        existing = w.vector_search_indexes.get_index(index_name)
-        print(f"  Index exists. Syncing...")
+        w.vector_search_indexes.get_index(index_name)
+        print("  Index exists. Syncing...")
         w.vector_search_indexes.sync_index(index_name)
-        print(f"  Sync initiated.")
+        print("  Sync initiated.")
         return
 
     except Exception:

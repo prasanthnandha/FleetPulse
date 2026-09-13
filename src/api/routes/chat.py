@@ -7,13 +7,12 @@ Supports both synchronous and streaming (SSE) responses.
 
 import json
 import uuid
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 
-from src.api.models import ChatHistoryItem, ChatRequest, ChatResponse, ChatStreamEvent
+from src.api.models import ChatHistoryItem, ChatRequest, ChatResponse
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

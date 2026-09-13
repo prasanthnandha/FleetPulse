@@ -6,11 +6,10 @@ tools to answer IT operations queries about device fleet health.
 """
 
 import json
-import uuid
-from typing import Any, Generator
+from collections.abc import Generator
 
 from src.agent.guardrails import sanitize_pii, validate_anti_hallucination
-from src.agent.llm_adapter import BaseLLMAdapter, LLMMessage, LLMResponse, create_llm_adapter
+from src.agent.llm_adapter import BaseLLMAdapter, LLMMessage, create_llm_adapter
 from src.agent.prompts import SYSTEM_PROMPT, TOOL_DEFINITIONS
 from src.agent.tools.prediction_tool import PredictionTool
 from src.agent.tools.rag_tool import RAGTool

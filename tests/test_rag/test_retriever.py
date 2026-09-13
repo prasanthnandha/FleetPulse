@@ -4,6 +4,7 @@ Unit tests for RAG Retriever and Confidence Threshold Guardrail.
 
 import json
 from pathlib import Path
+
 import pytest
 
 from src.rag.retriever import FleetPulseRetriever
@@ -93,7 +94,7 @@ class TestRAGRetriever:
         if not catalog_path.exists():
             pytest.skip("Synthetic catalog not generated yet.")
 
-        with open(catalog_path, "r", encoding="utf-8") as f:
+        with open(catalog_path, encoding="utf-8") as f:
             catalog = json.load(f)
 
         assert len(catalog) > 0

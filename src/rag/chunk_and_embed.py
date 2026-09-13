@@ -14,15 +14,12 @@ Usage:
 import argparse
 import hashlib
 import json
-import os
 import re
-import uuid
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 
 # ==============================================================================
 # Text Chunking
@@ -320,7 +317,7 @@ def run_chunking_and_embedding(
     print(f"Saved Parquet to {parquet_path}")
 
     # Print summary
-    print(f"\n── Chunk Summary ──")
+    print("\n── Chunk Summary ──")
     print(f"Catalog chunks:     {len(catalog_chunks)}")
     print(f"Manual chunks:      {len(manual_chunks)}")
     print(f"Total chunks:       {len(all_chunks)}")

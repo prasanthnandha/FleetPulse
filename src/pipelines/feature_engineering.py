@@ -17,7 +17,7 @@ Usage (local):
 import argparse
 from datetime import datetime
 
-from pyspark.sql import SparkSession, Window
+from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import FloatType, IntegerType
 
@@ -30,7 +30,7 @@ from src.pipelines.utils.transforms import (
 )
 
 
-def build_battery_features(spark: SparkSession, battery_table: str) -> "DataFrame":
+def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame:
     """
     Compute battery health features from raw cycle data.
 
@@ -198,7 +198,7 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> "DataFram
     return battery_features
 
 
-def build_compliance_features(spark: SparkSession, cve_table: str, inventory_table: str) -> "DataFrame":
+def build_compliance_features(spark: SparkSession, cve_table: str, inventory_table: str) -> DataFrame:
     """
     Compute compliance/patch-lag features from CVE data and device inventory.
 

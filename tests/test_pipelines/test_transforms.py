@@ -7,11 +7,9 @@ import pytest
 
 pyspark = pytest.importorskip("pyspark", reason="PySpark required for pipeline transforms")
 
-from src.pipelines.utils.transforms import (
-    rolling_slope_udf,
-    ewma_udf,
-    RISK_TIERS,
+from src.pipelines.utils.transforms import (  # noqa: E402
     DEGRADATION_THRESHOLDS,
+    RISK_TIERS,
 )
 
 
@@ -60,13 +58,11 @@ class TestTransformLogic:
         days_since_patch = 10
         os_version_lag = 0
         unpatched_cves = 0
-        encryption = True
-        passcode = True
 
         patch_score = max(0.0, 100.0 - days_since_patch * 1.5)  # 85
         os_score = max(0.0, 100.0 - os_version_lag * 20.0)      # 100
         vuln_score = max(0.0, 100.0 - unpatched_cves * 15.0)    # 100
-        sec_score = 50.0 + 50.0                                 # 100
+        sec_score = 50.0 + 50.0                                 # 100 (encryption + passcode both True)
 
         total_score = (
             patch_score * 0.25

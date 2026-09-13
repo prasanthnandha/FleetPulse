@@ -12,12 +12,10 @@ Usage:
 """
 
 import json
-import os
 import random
 from pathlib import Path
 
-from src.rag.generate_parts_catalog import DEVICE_MODELS, COMPONENT_TYPES
-
+from src.rag.generate_parts_catalog import DEVICE_MODELS
 
 # ==============================================================================
 # Repair Procedure Templates
@@ -206,7 +204,6 @@ def generate_manual_for_device(device_model: str, device_info: dict, parts: list
 
     for part in parts:
         component = part["component_type"]
-        comp_info = COMPONENT_TYPES.get(component, {})
         difficulty, difficulty_num = DIFFICULTY_LEVELS.get(component, ("Moderate", 3))
         location = random.choice(locations)
 

@@ -37,7 +37,6 @@ Output schema:
 """
 
 import json
-import os
 from typing import Any
 
 try:
@@ -45,7 +44,6 @@ try:
 except ImportError:
     mlflow = None
 
-import numpy as np
 import pandas as pd
 
 
@@ -273,7 +271,6 @@ class FleetPulseMLflowWrapper(_BaseModel):
 
     def load_context(self, context):
         """Load models from MLflow artifacts."""
-        import pickle
         artifacts = context.artifacts
 
         self.predictor = FleetPulsePredictor(

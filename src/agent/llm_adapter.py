@@ -8,7 +8,7 @@ Supports: Anthropic Claude, OpenAI-compatible APIs, Databricks Foundation Models
 import json
 import os
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Generator
+from collections.abc import Generator
 
 
 class LLMMessage:
@@ -183,8 +183,7 @@ class AnthropicAdapter(BaseLLMAdapter):
             params["tools"] = anthropic_tools
 
         with self.client.messages.stream(**params) as stream:
-            for text in stream.text_stream:
-                yield text
+            yield from stream.text_stream
 
 
 # ==============================================================================

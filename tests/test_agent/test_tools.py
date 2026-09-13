@@ -2,12 +2,11 @@
 Unit tests for Agent tools and tool-calling orchestration.
 """
 
-import pytest
+from src.agent.agent import FleetPulseAgent
 from src.agent.llm_adapter import BaseLLMAdapter, LLMMessage, LLMResponse
-from src.agent.tools.ticket_tool import TicketTool
 from src.agent.tools.prediction_tool import PredictionTool
 from src.agent.tools.rag_tool import RAGTool
-from src.agent.agent import FleetPulseAgent
+from src.agent.tools.ticket_tool import TicketTool
 
 
 class MockLLMAdapter(BaseLLMAdapter):
@@ -120,7 +119,7 @@ class TestAgentTools:
 
     def test_databricks_llm_adapter_factory(self):
         """Verify create_llm_adapter instantiates Databricks Foundation Model adapter."""
-        from src.agent.llm_adapter import create_llm_adapter, OpenAIAdapter
+        from src.agent.llm_adapter import OpenAIAdapter, create_llm_adapter
         adapter = create_llm_adapter(
             provider="databricks",
             host="https://adb-123456789.cloud.databricks.com",
