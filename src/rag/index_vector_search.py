@@ -146,8 +146,7 @@ def upload_chunks_to_delta(
     from pyspark.sql import SparkSession
 
     spark = (
-        SparkSession.builder
-        .appName("FleetPulse-VectorSearchUpload")
+        SparkSession.builder.appName("FleetPulse-VectorSearchUpload")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .getOrCreate()

@@ -12,14 +12,17 @@ from pydantic import BaseModel, Field
 # Chat
 # ==============================================================================
 
+
 class ChatRequest(BaseModel):
     """Request body for chat endpoint."""
+
     message: str = Field(..., min_length=1, max_length=2000, description="User message text")
     session_id: str | None = Field(None, description="Session ID for conversation continuity")
 
 
 class ToolCallInfo(BaseModel):
     """Info about a tool call made during the response."""
+
     tool: str
     arguments: dict[str, Any] = {}
     round: int = 1
@@ -27,6 +30,7 @@ class ToolCallInfo(BaseModel):
 
 class ToolResultInfo(BaseModel):
     """Info about a tool result."""
+
     tool: str
     result: dict[str, Any] = {}
     round: int = 1
@@ -34,6 +38,7 @@ class ToolResultInfo(BaseModel):
 
 class ChatResponse(BaseModel):
     """Response body for chat endpoint."""
+
     response: str
     session_id: str
     tool_calls: list[ToolCallInfo] = []
@@ -43,6 +48,7 @@ class ChatResponse(BaseModel):
 
 class ChatStreamEvent(BaseModel):
     """SSE event during streaming chat."""
+
     type: str  # "text", "tool_call", "tool_result", "done", "error"
     content: str | None = None
     tool: str | None = None
@@ -53,6 +59,7 @@ class ChatStreamEvent(BaseModel):
 
 class ChatHistoryItem(BaseModel):
     """A single message in chat history."""
+
     role: str
     content: str
     timestamp: str | None = None
@@ -62,8 +69,10 @@ class ChatHistoryItem(BaseModel):
 # Fleet / Device
 # ==============================================================================
 
+
 class DeviceHealth(BaseModel):
     """Device health summary."""
+
     device_id: str
     device_model: str
     fleet_name: str
@@ -81,6 +90,7 @@ class DeviceHealth(BaseModel):
 
 class FleetOverview(BaseModel):
     """Fleet-level risk overview."""
+
     total_devices: int
     risk_distribution: dict[str, int]  # {"critical": 3, "warning": 5, ...}
     avg_risk_score: float
@@ -92,6 +102,7 @@ class FleetOverview(BaseModel):
 
 class FleetTrendPoint(BaseModel):
     """Single data point in a fleet trend time series."""
+
     date: str
     avg_risk_score: float
     critical_count: int
@@ -101,6 +112,7 @@ class FleetTrendPoint(BaseModel):
 
 class FleetTrendResponse(BaseModel):
     """Fleet risk trend over time."""
+
     fleet_name: str | None = None
     trend_data: list[FleetTrendPoint] = []
 
@@ -109,8 +121,10 @@ class FleetTrendResponse(BaseModel):
 # Ticket
 # ==============================================================================
 
+
 class TicketDraft(BaseModel):
     """Drafted remediation ticket."""
+
     ticket_id: str
     status: str = "Draft"
     priority: str

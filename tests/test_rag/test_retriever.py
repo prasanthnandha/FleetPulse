@@ -59,20 +59,22 @@ class TestRAGRetriever:
                 "chunk_id": "chunk-cat-01",
                 "document_type": "parts_catalog",
                 "score": 0.92,
-                "metadata_json": json.dumps({
-                    "part_number": "APL-BAT-998877",
-                    "supplier": "LG Chem",
-                    "cost_usd": 65.0,
-                    "availability": "in_stock",
-                    "repair_time_hours": 1.5,
-                }),
+                "metadata_json": json.dumps(
+                    {
+                        "part_number": "APL-BAT-998877",
+                        "supplier": "LG Chem",
+                        "cost_usd": 65.0,
+                        "availability": "in_stock",
+                        "repair_time_hours": 1.5,
+                    }
+                ),
             },
             {
                 "chunk_id": "chunk-man-01",
                 "document_type": "service_manual",
                 "score": 0.88,
                 "chunk_text": "Step 1: Unscrew pentalobe screws. Step 2: Use suction cup.",
-            }
+            },
         ]
 
         processed = retriever._process_results(

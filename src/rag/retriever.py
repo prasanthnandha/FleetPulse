@@ -155,8 +155,7 @@ class FleetPulseRetriever:
         try:
             response = w.vector_search_indexes.query_index(
                 index_name=self.index_name,
-                columns=["chunk_id", "chunk_text", "document_type", "device_model",
-                         "component_type", "metadata_json"],
+                columns=["chunk_id", "chunk_text", "document_type", "device_model", "component_type", "metadata_json"],
                 query_text=query,
                 num_results=top_k,
                 filters_json=filter_str,
@@ -212,6 +211,7 @@ class FleetPulseRetriever:
         """Lazy-load the embedding model."""
         if self._embedding_model is None:
             from sentence_transformers import SentenceTransformer
+
             self._embedding_model = SentenceTransformer(self.embedding_model_name)
         return self._embedding_model
 
@@ -261,10 +261,12 @@ class FleetPulseRetriever:
         for idx in top_indices:
             chunk_idx = filtered_indices[idx]
             chunk = self._local_chunks[chunk_idx]
-            results.append({
-                **chunk,
-                "score": float(similarities[idx]),
-            })
+            results.append(
+                {
+                    **chunk,
+                    "score": float(similarities[idx]),
+                }
+            )
 
         return results
 

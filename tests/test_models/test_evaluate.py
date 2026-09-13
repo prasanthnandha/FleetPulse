@@ -42,7 +42,7 @@ class TestModelPredictionAndEvaluation:
                 "unpatched_cve_count": 2,
                 "device_encrypted": 1,
                 "passcode_enforced": 1,
-            }
+            },
         }
 
         result = predictor.predict(payload)
@@ -78,7 +78,7 @@ class TestModelPredictionAndEvaluation:
                     "overall_risk_score": 25.0 * i,
                     "device_encrypted": 1,
                     "passcode_enforced": 1,
-                }
+                },
             }
             for i in range(1, 4)
         ]

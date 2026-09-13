@@ -63,7 +63,8 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
                 F.col("temperature_measured_c"),
                 F.lit(0.0).cast(FloatType()),
                 lambda acc, x: acc + x,
-            ) / F.size(F.col("temperature_measured_c")),
+            )
+            / F.size(F.col("temperature_measured_c")),
         ).otherwise(F.col("ambient_temperature_c")),
     )
 
@@ -78,36 +79,28 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
 
     # ── Rolling window features ──────────────────────────────────────────
     discharge = (
-        discharge
-        .withColumn("capacity_rolling_mean", F.avg("capacity_ah").over(w_recent))
+        discharge.withColumn("capacity_rolling_mean", F.avg("capacity_ah").over(w_recent))
         .withColumn("temp_rolling_mean", F.avg("cycle_avg_temp").over(w_recent))
         .withColumn("temp_max", F.max("cycle_avg_temp").over(w_all))
         .withColumn("eod_voltage_rolling_mean", F.avg("eod_voltage").over(w_recent))
-        .withColumn("resistance_rolling_mean",
-                     F.avg("internal_resistance_ohm").over(w_recent))
+        .withColumn("resistance_rolling_mean", F.avg("internal_resistance_ohm").over(w_recent))
     )
 
     # ── Take the latest snapshot per device ──────────────────────────────
     w_rank = Window.partitionBy("device_id").orderBy(F.col("cycle_number").desc())
-    latest = (
-        discharge
-        .withColumn("_rank", F.row_number().over(w_rank))
-        .filter(F.col("_rank") == 1)
-        .drop("_rank")
-    )
+    latest = discharge.withColumn("_rank", F.row_number().over(w_rank)).filter(F.col("_rank") == 1).drop("_rank")
 
     # ── Compute capacity fade rate via collect_list + UDF ────────────────
     # Collect last 50 capacity values per device, compute slope
     slope_fn = rolling_slope_udf()
 
     capacity_series = (
-        discharge
-        .filter(F.col("capacity_ah").isNotNull())
+        discharge.filter(F.col("capacity_ah").isNotNull())
         .groupBy("device_id")
         .agg(
-            F.sort_array(F.collect_list(
-                F.struct(F.col("cycle_number"), F.col("capacity_ah"))
-            )).alias("capacity_series"),
+            F.sort_array(F.collect_list(F.struct(F.col("cycle_number"), F.col("capacity_ah")))).alias(
+                "capacity_series"
+            ),
             F.count("*").alias("cycle_count"),
         )
     )
@@ -118,18 +111,16 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
         F.transform(F.col("capacity_series"), lambda x: x["capacity_ah"]),
     )
     capacity_series = capacity_series.withColumn(
-        "capacity_fade_rate", slope_fn(F.col("capacity_values")),
+        "capacity_fade_rate",
+        slope_fn(F.col("capacity_values")),
     )
 
     # Similarly for voltage and resistance trends
     voltage_series = (
-        discharge
-        .filter(F.col("eod_voltage").isNotNull())
+        discharge.filter(F.col("eod_voltage").isNotNull())
         .groupBy("device_id")
         .agg(
-            F.sort_array(F.collect_list(
-                F.struct(F.col("cycle_number"), F.col("eod_voltage"))
-            )).alias("voltage_series"),
+            F.sort_array(F.collect_list(F.struct(F.col("cycle_number"), F.col("eod_voltage")))).alias("voltage_series"),
         )
     )
     voltage_series = voltage_series.withColumn(
@@ -137,17 +128,17 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
         F.transform(F.col("voltage_series"), lambda x: x["eod_voltage"]),
     )
     voltage_series = voltage_series.withColumn(
-        "voltage_drop_rate", slope_fn(F.col("voltage_values")),
+        "voltage_drop_rate",
+        slope_fn(F.col("voltage_values")),
     )
 
     resistance_series = (
-        discharge
-        .filter(F.col("internal_resistance_ohm").isNotNull())
+        discharge.filter(F.col("internal_resistance_ohm").isNotNull())
         .groupBy("device_id")
         .agg(
-            F.sort_array(F.collect_list(
-                F.struct(F.col("cycle_number"), F.col("internal_resistance_ohm"))
-            )).alias("resistance_series"),
+            F.sort_array(F.collect_list(F.struct(F.col("cycle_number"), F.col("internal_resistance_ohm")))).alias(
+                "resistance_series"
+            ),
         )
     )
     resistance_series = resistance_series.withColumn(
@@ -155,7 +146,8 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
         F.transform(F.col("resistance_series"), lambda x: x["internal_resistance_ohm"]),
     )
     resistance_series = resistance_series.withColumn(
-        "internal_resistance_trend", slope_fn(F.col("resistance_values")),
+        "internal_resistance_trend",
+        slope_fn(F.col("resistance_values")),
     )
 
     # ── Join everything ──────────────────────────────────────────────────
@@ -188,11 +180,9 @@ def build_battery_features(spark: SparkSession, battery_table: str) -> DataFrame
     # Capacity fade percentage
     battery_features = battery_features.withColumn(
         "capacity_fade_pct",
-        (
-            (F.col("nominal_capacity_ah") - F.col("current_capacity_ah"))
-            / F.col("nominal_capacity_ah")
-            * 100.0
-        ).cast(FloatType()),
+        ((F.col("nominal_capacity_ah") - F.col("current_capacity_ah")) / F.col("nominal_capacity_ah") * 100.0).cast(
+            FloatType()
+        ),
     )
 
     return battery_features
@@ -208,25 +198,22 @@ def build_compliance_features(spark: SparkSession, cve_table: str, inventory_tab
         - unpatched_critical_cves: count of unpatched HIGH/CRITICAL CVEs for device's OS
     """
     cve_df = spark.table(cve_table) if "." in cve_table else spark.read.format("delta").load(cve_table)
-    inv_df = spark.table(inventory_table) if "." in inventory_table else spark.read.format("delta").load(inventory_table)
+    inv_df = (
+        spark.table(inventory_table) if "." in inventory_table else spark.read.format("delta").load(inventory_table)
+    )
 
     now = F.current_timestamp()
 
     # ── Count unpatched critical CVEs per OS ──────────────────────────────
     unpatched_cves = (
-        cve_df
-        .filter(
-            (F.col("severity").isin("HIGH", "CRITICAL"))
-            & (F.col("patch_available") == "false")
-        )
+        cve_df.filter((F.col("severity").isin("HIGH", "CRITICAL")) & (F.col("patch_available") == "false"))
         .groupBy("affected_os")
         .agg(F.count("*").alias("unpatched_critical_cves"))
     )
 
     # ── Compute patch freshness per OS ───────────────────────────────────
     latest_patch = (
-        cve_df
-        .filter(F.col("patch_date").isNotNull())
+        cve_df.filter(F.col("patch_date").isNotNull())
         .groupBy("affected_os")
         .agg(F.max("patch_date").alias("latest_patch_date"))
     )
@@ -235,8 +222,7 @@ def build_compliance_features(spark: SparkSession, cve_table: str, inventory_tab
     # Simple heuristic: compare os_version to latest_os_version
     # Convert version strings to comparable numbers
     inv_enriched = (
-        inv_df
-        .join(unpatched_cves, inv_df["os_type"] == unpatched_cves["affected_os"], "left")
+        inv_df.join(unpatched_cves, inv_df["os_type"] == unpatched_cves["affected_os"], "left")
         .join(latest_patch, inv_df["os_type"] == latest_patch["affected_os"], "left")
         .withColumn(
             "days_since_last_patch",
@@ -247,9 +233,7 @@ def build_compliance_features(spark: SparkSession, cve_table: str, inventory_tab
         )
         .withColumn(
             "os_version_lag",
-            F.when(
-                F.col("os_version") == F.col("latest_os_version"), F.lit(0)
-            ).otherwise(
+            F.when(F.col("os_version") == F.col("latest_os_version"), F.lit(0)).otherwise(
                 # Simple heuristic: extract major version numbers
                 F.abs(
                     F.regexp_extract(F.col("latest_os_version"), r"(\d+)", 1).cast(IntegerType())
@@ -326,10 +310,7 @@ def run_feature_engineering(
     # Overall risk score (inverse of health — higher = riskier)
     features = features.withColumn(
         "overall_risk_score",
-        (
-            F.lit(100.0)
-            - (F.col("battery_health_score") * 0.5 + F.col("compliance_score") * 0.5)
-        ).cast(FloatType()),
+        (F.lit(100.0) - (F.col("battery_health_score") * 0.5 + F.col("compliance_score") * 0.5)).cast(FloatType()),
     )
 
     # Risk tier
@@ -352,38 +333,48 @@ def run_feature_engineering(
     # Days to non-compliance (heuristic: based on patch lag trend)
     features = features.withColumn(
         "days_to_non_compliance",
-        F.when(
-            F.col("compliance_score") < 50, F.lit(0.0)
-        ).when(
+        F.when(F.col("compliance_score") < 50, F.lit(0.0))
+        .when(
             F.col("compliance_score") < 70,
             (F.col("compliance_score") - 50.0) * 1.5,
-        ).otherwise(
+        )
+        .otherwise(
             (F.col("compliance_score") - 50.0) * 3.0,
-        ).cast(FloatType()),
+        )
+        .cast(FloatType()),
     )
 
     # ── Add metadata columns ─────────────────────────────────────────────
-    features = (
-        features
-        .withColumn("snapshot_date", F.lit(now))
-        .withColumn("updated_at", F.lit(now))
-    )
+    features = features.withColumn("snapshot_date", F.lit(now)).withColumn("updated_at", F.lit(now))
 
     # ── Select final columns ─────────────────────────────────────────────
     final_columns = [
-        "device_id", "device_model", "fleet_name", "snapshot_date",
+        "device_id",
+        "device_model",
+        "fleet_name",
+        "snapshot_date",
         # Battery features
-        "cycle_count", "current_capacity_ah", "nominal_capacity_ah",
-        "capacity_fade_pct", "capacity_fade_rate",
-        "avg_temperature_exposure_c", "max_temperature_c",
-        "voltage_drop_rate", "internal_resistance_trend",
+        "cycle_count",
+        "current_capacity_ah",
+        "nominal_capacity_ah",
+        "capacity_fade_pct",
+        "capacity_fade_rate",
+        "avg_temperature_exposure_c",
+        "max_temperature_c",
+        "voltage_drop_rate",
+        "internal_resistance_trend",
         # Compliance features
-        "days_since_last_patch", "os_version_lag", "unpatched_critical_cves",
+        "days_since_last_patch",
+        "os_version_lag",
+        "unpatched_critical_cves",
         "compliance_score",
         # Derived scores
-        "battery_health_score", "overall_risk_score", "risk_tier",
+        "battery_health_score",
+        "overall_risk_score",
+        "risk_tier",
         # Labels
-        "remaining_useful_life_days", "days_to_non_compliance",
+        "remaining_useful_life_days",
+        "days_to_non_compliance",
         "updated_at",
     ]
     output_df = features.select([c for c in final_columns if c in features.columns])
@@ -422,8 +413,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     spark = (
-        SparkSession.builder
-        .appName("FleetPulse-FeatureEngineering")
+        SparkSession.builder.appName("FleetPulse-FeatureEngineering")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .getOrCreate()

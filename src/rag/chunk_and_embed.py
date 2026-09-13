@@ -25,6 +25,7 @@ import pandas as pd
 # Text Chunking
 # ==============================================================================
 
+
 class RecursiveTextSplitter:
     """
     Splits text into chunks using a hierarchy of separators,
@@ -104,7 +105,7 @@ class RecursiveTextSplitter:
         """Add overlap from previous chunk's end to current chunk's start."""
         result = [chunks[0]]
         for i in range(1, len(chunks)):
-            prev_end = chunks[i - 1][-self.chunk_overlap:]
+            prev_end = chunks[i - 1][-self.chunk_overlap :]
             result.append(prev_end + " " + chunks[i])
         return result
 
@@ -112,6 +113,7 @@ class RecursiveTextSplitter:
 # ==============================================================================
 # Embedding
 # ==============================================================================
+
 
 class EmbeddingModel:
     """Wrapper for sentence-transformer embedding model."""
@@ -123,6 +125,7 @@ class EmbeddingModel:
     def _load_model(self):
         if self._model is None:
             from sentence_transformers import SentenceTransformer
+
             print(f"Loading embedding model: {self.model_name}...")
             self._model = SentenceTransformer(self.model_name)
         return self._model
@@ -149,6 +152,7 @@ class EmbeddingModel:
 # Chunking Pipeline
 # ==============================================================================
 
+
 def chunk_parts_catalog(catalog_path: str) -> list[dict]:
     """
     Chunk the parts catalog into individual entries.
@@ -174,23 +178,27 @@ def chunk_parts_catalog(catalog_path: str) -> list[dict]:
 
         chunk_id = hashlib.sha256(f"{item['device_model']}_{item['component_type']}".encode()).hexdigest()[:12]
 
-        chunks.append({
-            "chunk_id": f"cat_{chunk_id}",
-            "document_id": f"catalog_{item['device_model'].replace(' ', '_')}",
-            "document_type": "parts_catalog",
-            "device_model": item["device_model"],
-            "component_type": item["component_type"],
-            "chunk_text": text,
-            "chunk_index": 0,
-            "metadata_json": json.dumps({
-                "part_number": item["part_number"],
-                "supplier": item["supplier"],
-                "cost_usd": item["cost_usd"],
-                "repair_time_hours": item["estimated_repair_time_hours"],
-                "availability": item["availability"],
-                "manufacturer": item["manufacturer"],
-            }),
-        })
+        chunks.append(
+            {
+                "chunk_id": f"cat_{chunk_id}",
+                "document_id": f"catalog_{item['device_model'].replace(' ', '_')}",
+                "document_type": "parts_catalog",
+                "device_model": item["device_model"],
+                "component_type": item["component_type"],
+                "chunk_text": text,
+                "chunk_index": 0,
+                "metadata_json": json.dumps(
+                    {
+                        "part_number": item["part_number"],
+                        "supplier": item["supplier"],
+                        "cost_usd": item["cost_usd"],
+                        "repair_time_hours": item["estimated_repair_time_hours"],
+                        "availability": item["availability"],
+                        "manufacturer": item["manufacturer"],
+                    }
+                ),
+            }
+        )
 
     return chunks
 
@@ -225,9 +233,18 @@ def chunk_service_manuals(manuals_dir: str) -> list[dict]:
 
             # Extract component type from section title
             component_type = None
-            for comp in ["battery", "display", "logic_board", "charging_port",
-                         "camera_module", "speaker", "antenna", "storage",
-                         "keyboard", "trackpad"]:
+            for comp in [
+                "battery",
+                "display",
+                "logic_board",
+                "charging_port",
+                "camera_module",
+                "speaker",
+                "antenna",
+                "storage",
+                "keyboard",
+                "trackpad",
+            ]:
                 if comp.replace("_", " ") in section_title.lower():
                     component_type = comp
                     break
@@ -236,23 +253,25 @@ def chunk_service_manuals(manuals_dir: str) -> list[dict]:
             section_chunks = splitter.split_text(section)
 
             for i, chunk_text in enumerate(section_chunks):
-                chunk_id = hashlib.sha256(
-                    f"{device_model}_{section_title}_{i}".encode()
-                ).hexdigest()[:12]
+                chunk_id = hashlib.sha256(f"{device_model}_{section_title}_{i}".encode()).hexdigest()[:12]
 
-                chunks.append({
-                    "chunk_id": f"man_{chunk_id}",
-                    "document_id": f"manual_{md_file.stem}",
-                    "document_type": "service_manual",
-                    "device_model": device_model,
-                    "component_type": component_type,
-                    "chunk_text": chunk_text,
-                    "chunk_index": i,
-                    "metadata_json": json.dumps({
-                        "section_title": section_title,
-                        "source_file": md_file.name,
-                    }),
-                })
+                chunks.append(
+                    {
+                        "chunk_id": f"man_{chunk_id}",
+                        "document_id": f"manual_{md_file.stem}",
+                        "document_type": "service_manual",
+                        "device_model": device_model,
+                        "component_type": component_type,
+                        "chunk_text": chunk_text,
+                        "chunk_index": i,
+                        "metadata_json": json.dumps(
+                            {
+                                "section_title": section_title,
+                                "source_file": md_file.name,
+                            }
+                        ),
+                    }
+                )
 
     return chunks
 

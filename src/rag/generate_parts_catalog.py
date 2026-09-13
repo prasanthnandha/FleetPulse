@@ -151,6 +151,7 @@ COMPONENT_TYPES = {
     },
 }
 
+
 def _generate_part_number(device_model: str, component: str) -> str:
     """Generate a deterministic, realistic-looking part number."""
     seed = f"{device_model}_{component}"
@@ -158,15 +159,31 @@ def _generate_part_number(device_model: str, component: str) -> str:
 
     # Format: MFR-COMP-HEXHEX (e.g., APL-BAT-A3F2C8)
     mfr_codes = {
-        "Apple": "APL", "Samsung": "SAM", "Google": "GGL", "Microsoft": "MSF",
-        "Lenovo": "LNV", "Dell": "DLL", "HP": "HPQ", "OnePlus": "OPL",
-        "Motorola": "MOT", "Nokia": "NOK", "Xiaomi": "XMI", "Asus": "ASU",
+        "Apple": "APL",
+        "Samsung": "SAM",
+        "Google": "GGL",
+        "Microsoft": "MSF",
+        "Lenovo": "LNV",
+        "Dell": "DLL",
+        "HP": "HPQ",
+        "OnePlus": "OPL",
+        "Motorola": "MOT",
+        "Nokia": "NOK",
+        "Xiaomi": "XMI",
+        "Asus": "ASU",
         "Sony": "SNY",
     }
     comp_codes = {
-        "battery": "BAT", "display": "DSP", "logic_board": "MLB",
-        "charging_port": "CHG", "camera_module": "CAM", "speaker": "SPK",
-        "antenna": "ANT", "storage": "STO", "keyboard": "KBD", "trackpad": "TPD",
+        "battery": "BAT",
+        "display": "DSP",
+        "logic_board": "MLB",
+        "charging_port": "CHG",
+        "camera_module": "CAM",
+        "speaker": "SPK",
+        "antenna": "ANT",
+        "storage": "STO",
+        "keyboard": "KBD",
+        "trackpad": "TPD",
     }
 
     manufacturer = DEVICE_MODELS[device_model]["manufacturer"]
@@ -182,7 +199,21 @@ def generate_catalog() -> list[dict]:
     catalog = []
 
     for device_model, device_info in DEVICE_MODELS.items():
-        is_laptop = device_info["os"] in ("Windows", "macOS", "ChromeOS") and "Book" in device_model or "Pad" not in device_model and "Surface" in device_model or "ThinkPad" in device_model or "Latitude" in device_model or "XPS" in device_model or "EliteBook" in device_model or "ProBook" in device_model or "IdeaPad" in device_model or "ZenBook" in device_model or "Spectre" in device_model or "MacBook" in device_model
+        is_laptop = (
+            device_info["os"] in ("Windows", "macOS", "ChromeOS")
+            and "Book" in device_model
+            or "Pad" not in device_model
+            and "Surface" in device_model
+            or "ThinkPad" in device_model
+            or "Latitude" in device_model
+            or "XPS" in device_model
+            or "EliteBook" in device_model
+            or "ProBook" in device_model
+            or "IdeaPad" in device_model
+            or "ZenBook" in device_model
+            or "Spectre" in device_model
+            or "MacBook" in device_model
+        )
 
         for component, comp_info in COMPONENT_TYPES.items():
             # Skip laptop-only components for phones/tablets
@@ -190,7 +221,9 @@ def generate_catalog() -> list[dict]:
                 continue
 
             # Skip keyboard/trackpad for tablets too
-            if component in ("keyboard", "trackpad") and ("iPad" in device_model or "Tab" in device_model or "Go" in device_model):
+            if component in ("keyboard", "trackpad") and (
+                "iPad" in device_model or "Tab" in device_model or "Go" in device_model
+            ):
                 continue
 
             part_number = _generate_part_number(device_model, component)
@@ -198,20 +231,22 @@ def generate_catalog() -> list[dict]:
             cost = round(random.uniform(*comp_info["cost_range"]), 2)
             repair_time = round(random.uniform(*comp_info["repair_time_range"]), 1)
 
-            catalog.append({
-                "device_model": device_model,
-                "manufacturer": device_info["manufacturer"],
-                "os": device_info["os"],
-                "year": device_info["year"],
-                "component_type": component,
-                "component_description": comp_info["description"],
-                "part_number": part_number,
-                "supplier": supplier,
-                "cost_usd": cost,
-                "estimated_repair_time_hours": repair_time,
-                "availability": random.choice(["in_stock", "in_stock", "in_stock", "backorder", "limited"]),
-                "warranty_months": random.choice([3, 6, 12]),
-            })
+            catalog.append(
+                {
+                    "device_model": device_model,
+                    "manufacturer": device_info["manufacturer"],
+                    "os": device_info["os"],
+                    "year": device_info["year"],
+                    "component_type": component,
+                    "component_description": comp_info["description"],
+                    "part_number": part_number,
+                    "supplier": supplier,
+                    "cost_usd": cost,
+                    "estimated_repair_time_hours": repair_time,
+                    "availability": random.choice(["in_stock", "in_stock", "in_stock", "backorder", "limited"]),
+                    "warranty_months": random.choice([3, 6, 12]),
+                }
+            )
 
     return catalog
 

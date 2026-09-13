@@ -92,8 +92,10 @@ def prepare_anomaly_data(feature_df: pd.DataFrame):
             labels[df["internal_resistance_trend"] > mean_irt + 3 * std_irt] = -1
 
     anomaly_count = (labels == -1).sum()
-    print(f"Heuristic anomaly labels: {anomaly_count} anomalies out of {len(labels)} devices "
-          f"({anomaly_count / len(labels) * 100:.1f}%)")
+    print(
+        f"Heuristic anomaly labels: {anomaly_count} anomalies out of {len(labels)} devices "
+        f"({anomaly_count / len(labels) * 100:.1f}%)"
+    )
 
     return df, labels, available_features
 
@@ -165,13 +167,18 @@ def train_isolation_forest(
             true_binary = (heuristic_labels == -1).astype(int)
 
             precision, recall, f1, _ = precision_recall_fscore_support(
-                true_binary, pred_binary, average="binary", zero_division=0,
+                true_binary,
+                pred_binary,
+                average="binary",
+                zero_division=0,
             )
-            metrics.update({
-                "precision": float(precision),
-                "recall": float(recall),
-                "f1_score": float(f1),
-            })
+            metrics.update(
+                {
+                    "precision": float(precision),
+                    "recall": float(recall),
+                    "f1_score": float(f1),
+                }
+            )
 
             try:
                 auc = roc_auc_score(true_binary, -anomaly_scores)  # Negate: higher score = more normal
@@ -215,17 +222,19 @@ def train_isolation_forest(
             except Exception as e:
                 print(f"Model registration skipped: {e}")
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Isolation Forest Training Complete")
         print(f"Run ID: {run.info.run_id}")
-        print(f"Anomalies detected: {n_anomalies_detected}/{len(predictions)} "
-              f"({n_anomalies_detected/len(predictions)*100:.1f}%)")
+        print(
+            f"Anomalies detected: {n_anomalies_detected}/{len(predictions)} "
+            f"({n_anomalies_detected / len(predictions) * 100:.1f}%)"
+        )
         if "f1_score" in metrics:
             print(f"Precision: {metrics['precision']:.4f}")
             print(f"Recall:    {metrics['recall']:.4f}")
             print(f"F1:        {metrics['f1_score']:.4f}")
         print(f"Top features: {list(sorted_importance.keys())[:5]}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         return {
             "model": model,
@@ -237,8 +246,6 @@ def train_isolation_forest(
         }
 
 
-
-
 def run_training(
     feature_table: str,
     experiment_name: str = "/FleetPulse/Anomaly-Detector",
@@ -248,6 +255,7 @@ def run_training(
     """Main training pipeline."""
     if use_spark:
         from pyspark.sql import SparkSession
+
         spark = SparkSession.builder.appName("FleetPulse-AnomalyTraining").getOrCreate()
         if "." in feature_table:
             df = spark.table(feature_table).toPandas()

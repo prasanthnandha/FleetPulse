@@ -147,7 +147,7 @@ class FleetPulsePredictor:
         if self.rul_model is not None:
             try:
                 pred = self.rul_model.predict(X)
-                if hasattr(pred, '__len__'):
+                if hasattr(pred, "__len__"):
                     rul_days = float(pred[0])
                 else:
                     rul_days = float(pred)
@@ -174,7 +174,7 @@ class FleetPulsePredictor:
                 else:
                     # MLflow pyfunc wrapper
                     anomaly_pred = self.anomaly_model.predict(X_scaled)
-                    anomaly_flag = bool(anomaly_pred[0] == -1) if hasattr(anomaly_pred, '__len__') else False
+                    anomaly_flag = bool(anomaly_pred[0] == -1) if hasattr(anomaly_pred, "__len__") else False
             except Exception as e:
                 print(f"Anomaly detection error: {e}")
 
@@ -186,9 +186,12 @@ class FleetPulsePredictor:
             risk_score = max(risk_score, 80.0)  # Boost risk for anomalies
 
         risk_tier = (
-            "healthy" if risk_score <= 25
-            else "watch" if risk_score <= 50
-            else "warning" if risk_score <= 75
+            "healthy"
+            if risk_score <= 25
+            else "watch"
+            if risk_score <= 50
+            else "warning"
+            if risk_score <= 75
             else "critical"
         )
 
@@ -197,12 +200,14 @@ class FleetPulsePredictor:
         importance = self._feature_importance or self._compute_naive_importance(features)
 
         for factor, imp in sorted(importance.items(), key=lambda x: x[1], reverse=True)[:5]:
-            driving_factors.append({
-                "factor": factor,
-                "importance": round(float(imp), 4),
-                "value": features.get(factor, 0.0),
-                "description": self._get_factor_description(factor, features.get(factor, 0.0)),
-            })
+            driving_factors.append(
+                {
+                    "factor": factor,
+                    "importance": round(float(imp), 4),
+                    "value": features.get(factor, 0.0),
+                    "description": self._get_factor_description(factor, features.get(factor, 0.0)),
+                }
+            )
 
         return {
             "device_id": device_id,
@@ -219,7 +224,7 @@ class FleetPulsePredictor:
     def _compute_naive_importance(features: dict) -> dict:
         """Fallback feature importance based on value deviation from healthy baselines."""
         baselines = {
-            "capacity_fade_pct": (0, 30, True),       # (healthy, critical, higher_is_worse)
+            "capacity_fade_pct": (0, 30, True),  # (healthy, critical, higher_is_worse)
             "capacity_fade_rate": (0, -0.01, False),
             "days_since_last_patch": (0, 90, True),
             "os_version_lag": (0, 3, True),

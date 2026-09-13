@@ -22,9 +22,30 @@ from src.rag.generate_parts_catalog import DEVICE_MODELS
 # ==============================================================================
 
 TOOLS_REQUIRED = {
-    "battery": ["Pentalobe P2 screwdriver", "Suction cup", "Spudger", "Tweezers", "iOpener (heat pad)", "Battery adhesive strips"],
-    "display": ["Pentalobe P2 screwdriver", "Suction cup", "Spudger", "Heat gun", "Display adhesive", "Microfiber cloth"],
-    "logic_board": ["Phillips #000 screwdriver", "Tri-point Y000 screwdriver", "Spudger", "Tweezers", "Anti-static wrist strap", "Thermal paste"],
+    "battery": [
+        "Pentalobe P2 screwdriver",
+        "Suction cup",
+        "Spudger",
+        "Tweezers",
+        "iOpener (heat pad)",
+        "Battery adhesive strips",
+    ],
+    "display": [
+        "Pentalobe P2 screwdriver",
+        "Suction cup",
+        "Spudger",
+        "Heat gun",
+        "Display adhesive",
+        "Microfiber cloth",
+    ],
+    "logic_board": [
+        "Phillips #000 screwdriver",
+        "Tri-point Y000 screwdriver",
+        "Spudger",
+        "Tweezers",
+        "Anti-static wrist strap",
+        "Thermal paste",
+    ],
     "charging_port": ["Pentalobe P2 screwdriver", "Spudger", "Tweezers", "Phillips #000 screwdriver"],
     "camera_module": ["Pentalobe P2 screwdriver", "Spudger", "Tweezers", "Phillips #000 screwdriver"],
     "speaker": ["Pentalobe P2 screwdriver", "Spudger", "Tweezers"],
@@ -207,17 +228,19 @@ def generate_manual_for_device(device_model: str, device_info: dict, parts: list
         difficulty, difficulty_num = DIFFICULTY_LEVELS.get(component, ("Moderate", 3))
         location = random.choice(locations)
 
-        lines.extend([
-            f"## {component.replace('_', ' ').title()} Replacement",
-            "",
-            f"**Part Number:** `{part['part_number']}`",
-            f"**Supplier:** {part['supplier']}",
-            f"**Cost:** ${part['cost_usd']:.2f}",
-            f"**Estimated Repair Time:** {part['estimated_repair_time_hours']} hours",
-            f"**Difficulty:** {difficulty} ({'★' * difficulty_num}{'☆' * (5 - difficulty_num)})",
-            f"**Availability:** {part['availability']}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"## {component.replace('_', ' ').title()} Replacement",
+                "",
+                f"**Part Number:** `{part['part_number']}`",
+                f"**Supplier:** {part['supplier']}",
+                f"**Cost:** ${part['cost_usd']:.2f}",
+                f"**Estimated Repair Time:** {part['estimated_repair_time_hours']} hours",
+                f"**Difficulty:** {difficulty} ({'★' * difficulty_num}{'☆' * (5 - difficulty_num)})",
+                f"**Availability:** {part['availability']}",
+                "",
+            ]
+        )
 
         # Safety warnings
         if component in SAFETY_WARNINGS:
@@ -250,19 +273,21 @@ def generate_manual_for_device(device_model: str, device_info: dict, parts: list
         lines.append("")
 
         # Post-repair verification
-        lines.extend([
-            "### Post-Repair Verification",
-            "",
-            f"- [ ] {component.replace('_', ' ').title()} is functioning correctly",
-            "- [ ] All screws are replaced and tightened",
-            "- [ ] No loose cables or connectors",
-            "- [ ] Device powers on and completes boot",
-            "- [ ] MDM compliance check passes",
-            "- [ ] Battery calibration completed (if applicable)",
-            "",
-            "---",
-            "",
-        ])
+        lines.extend(
+            [
+                "### Post-Repair Verification",
+                "",
+                f"- [ ] {component.replace('_', ' ').title()} is functioning correctly",
+                "- [ ] All screws are replaced and tightened",
+                "- [ ] No loose cables or connectors",
+                "- [ ] Device powers on and completes boot",
+                "- [ ] MDM compliance check passes",
+                "- [ ] Battery calibration completed (if applicable)",
+                "",
+                "---",
+                "",
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -274,6 +299,7 @@ def main():
     if not catalog_path.exists():
         print("Parts catalog not found — generating first...")
         from src.rag.generate_parts_catalog import generate_catalog
+
         catalog = generate_catalog()
         catalog_path.parent.mkdir(parents=True, exist_ok=True)
         with open(catalog_path, "w") as f:

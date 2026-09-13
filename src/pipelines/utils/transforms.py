@@ -5,7 +5,6 @@ Stateless transform functions for feature engineering.
 All functions operate on PySpark DataFrames or columns.
 """
 
-
 import numpy as np
 from pyspark.sql import Column, DataFrame, Window
 from pyspark.sql import functions as F
@@ -14,6 +13,7 @@ from pyspark.sql.types import FloatType
 # ==============================================================================
 # Rolling Slope (Linear Regression over a window)
 # ==============================================================================
+
 
 def rolling_slope_udf():
     """
@@ -51,6 +51,7 @@ def rolling_slope_udf():
 # Exponential Weighted Moving Average
 # ==============================================================================
 
+
 def ewma_udf(alpha: float = 0.3):
     """
     Returns a PySpark UDF that computes the exponential weighted moving average
@@ -80,6 +81,7 @@ def ewma_udf(alpha: float = 0.3):
 # Compliance Score
 # ==============================================================================
 
+
 def compute_compliance_score(
     days_since_patch_col: str | Column,
     os_version_lag_col: str | Column,
@@ -100,22 +102,17 @@ def compute_compliance_score(
     os_score = F.greatest(F.lit(0.0), F.lit(100.0) - F.col(os_version_lag_col) * 20.0)
     vuln_score = F.greatest(F.lit(0.0), F.lit(100.0) - F.col(unpatched_cves_col) * 15.0)
 
-    sec_score = (
-        F.when(F.col(encryption_col) == "true", F.lit(50.0)).otherwise(F.lit(0.0))
-        + F.when(F.col(passcode_col) == "true", F.lit(50.0)).otherwise(F.lit(0.0))
-    )
+    sec_score = F.when(F.col(encryption_col) == "true", F.lit(50.0)).otherwise(F.lit(0.0)) + F.when(
+        F.col(passcode_col) == "true", F.lit(50.0)
+    ).otherwise(F.lit(0.0))
 
-    return (
-        patch_score * 0.25
-        + os_score * 0.25
-        + vuln_score * 0.30
-        + sec_score * 0.20
-    ).cast(FloatType())
+    return (patch_score * 0.25 + os_score * 0.25 + vuln_score * 0.30 + sec_score * 0.20).cast(FloatType())
 
 
 # ==============================================================================
 # Battery Health Score
 # ==============================================================================
+
 
 def compute_battery_health_score(
     capacity_fade_pct_col: str | Column,
@@ -152,6 +149,7 @@ def compute_battery_health_score(
 # Risk Tier Classification
 # ==============================================================================
 
+
 def assign_risk_tier(risk_score_col: str | Column) -> Column:
     """
     Classify overall risk score into tiers.
@@ -172,6 +170,7 @@ def assign_risk_tier(risk_score_col: str | Column) -> Column:
 # ==============================================================================
 # Windowed Aggregations
 # ==============================================================================
+
 
 def add_rolling_features(
     df: DataFrame,
@@ -196,8 +195,7 @@ def add_rolling_features(
     p = prefix or value_col
 
     return (
-        df
-        .withColumn(f"{p}_rolling_mean", F.avg(F.col(value_col)).over(w))
+        df.withColumn(f"{p}_rolling_mean", F.avg(F.col(value_col)).over(w))
         .withColumn(f"{p}_rolling_std", F.stddev(F.col(value_col)).over(w))
         .withColumn(f"{p}_rolling_min", F.min(F.col(value_col)).over(w))
         .withColumn(f"{p}_rolling_max", F.max(F.col(value_col)).over(w))
@@ -207,6 +205,7 @@ def add_rolling_features(
 # ==============================================================================
 # Remaining Useful Life Estimation (heuristic label)
 # ==============================================================================
+
 
 def estimate_rul_label(
     capacity_fade_rate_col: str | Column,

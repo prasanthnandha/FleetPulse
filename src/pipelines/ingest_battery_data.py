@@ -29,15 +29,40 @@ from pyspark.sql import Row, SparkSession
 
 # NASA PCoE dataset battery IDs and their test conditions
 NASA_BATTERY_IDS = [
-    "B0005", "B0006", "B0007", "B0018",
-    "B0025", "B0026", "B0027", "B0028",
-    "B0029", "B0030", "B0031", "B0032",
-    "B0033", "B0034", "B0036",
-    "B0038", "B0039", "B0040",
-    "B0041", "B0042", "B0043", "B0044",
-    "B0045", "B0046", "B0047", "B0048",
-    "B0049", "B0050", "B0051", "B0052",
-    "B0053", "B0054", "B0055", "B0056",
+    "B0005",
+    "B0006",
+    "B0007",
+    "B0018",
+    "B0025",
+    "B0026",
+    "B0027",
+    "B0028",
+    "B0029",
+    "B0030",
+    "B0031",
+    "B0032",
+    "B0033",
+    "B0034",
+    "B0036",
+    "B0038",
+    "B0039",
+    "B0040",
+    "B0041",
+    "B0042",
+    "B0043",
+    "B0044",
+    "B0045",
+    "B0046",
+    "B0047",
+    "B0048",
+    "B0049",
+    "B0050",
+    "B0051",
+    "B0052",
+    "B0053",
+    "B0054",
+    "B0055",
+    "B0056",
 ]
 
 # Synthetic device models for mapping
@@ -75,14 +100,16 @@ def _map_batteries_to_devices(battery_ids: list[str]) -> list[dict]:
         model_name, manufacturer, os_type = DEVICE_MODELS[i % len(DEVICE_MODELS)]
         fleet = FLEET_NAMES[i % len(FLEET_NAMES)]
         device_id = _generate_device_id(bid, model_name)
-        mappings.append({
-            "battery_id": bid,
-            "device_id": device_id,
-            "device_model": model_name,
-            "manufacturer": manufacturer,
-            "os_type": os_type,
-            "fleet_name": fleet,
-        })
+        mappings.append(
+            {
+                "battery_id": bid,
+                "device_id": device_id,
+                "device_model": model_name,
+                "manufacturer": manufacturer,
+                "os_type": os_type,
+                "fleet_name": fleet,
+            }
+        )
     return mappings
 
 
@@ -134,9 +161,21 @@ def parse_mat_file(mat_path: str) -> list[dict]:
             ambient_temp = float(cycle.ambient_temperature) if hasattr(cycle, "ambient_temperature") else None
 
             data = cycle.data
-            voltage = np.array(data.Voltage_measured, dtype=np.float32).tolist() if hasattr(data, "Voltage_measured") else None
-            current = np.array(data.Current_measured, dtype=np.float32).tolist() if hasattr(data, "Current_measured") else None
-            temperature = np.array(data.Temperature_measured, dtype=np.float32).tolist() if hasattr(data, "Temperature_measured") else None
+            voltage = (
+                np.array(data.Voltage_measured, dtype=np.float32).tolist()
+                if hasattr(data, "Voltage_measured")
+                else None
+            )
+            current = (
+                np.array(data.Current_measured, dtype=np.float32).tolist()
+                if hasattr(data, "Current_measured")
+                else None
+            )
+            temperature = (
+                np.array(data.Temperature_measured, dtype=np.float32).tolist()
+                if hasattr(data, "Temperature_measured")
+                else None
+            )
             time_arr = np.array(data.Time, dtype=np.float32).tolist() if hasattr(data, "Time") else None
 
             # Capacity — some files have Capacity, others have Charge/Discharge_Capacity
@@ -159,19 +198,21 @@ def parse_mat_file(mat_path: str) -> list[dict]:
                 half = max_points // 2
                 return arr[:half] + arr[-half:]
 
-            rows.append({
-                "battery_id": battery_id,
-                "cycle_number": idx + 1,
-                "cycle_type": cycle_type,
-                "ambient_temperature_c": ambient_temp,
-                "voltage_measured_v": _truncate(voltage),
-                "current_measured_a": _truncate(current),
-                "temperature_measured_c": _truncate(temperature),
-                "time_s": _truncate(time_arr),
-                "capacity_ah": capacity,
-                "cycle_duration_s": duration,
-                "timestamp": base_time + timedelta(hours=idx * 2),  # ~2 hours per cycle
-            })
+            rows.append(
+                {
+                    "battery_id": battery_id,
+                    "cycle_number": idx + 1,
+                    "cycle_type": cycle_type,
+                    "ambient_temperature_c": ambient_temp,
+                    "voltage_measured_v": _truncate(voltage),
+                    "current_measured_a": _truncate(current),
+                    "temperature_measured_c": _truncate(temperature),
+                    "time_s": _truncate(time_arr),
+                    "capacity_ah": capacity,
+                    "cycle_duration_s": duration,
+                    "timestamp": base_time + timedelta(hours=idx * 2),  # ~2 hours per cycle
+                }
+            )
 
         except Exception as e:
             print(f"WARNING: Error parsing cycle {idx} in {mat_path}: {e}")
@@ -224,34 +265,32 @@ def generate_synthetic_battery_data(num_batteries: int = 34, cycles_per_battery:
 
             # Discharge voltage curve (simplified)
             voltage = (
-                4.2 - (4.2 - 2.5) * np.linspace(0, 1, n_points) ** 0.8
-                + np.random.normal(0, 0.01, n_points)
+                4.2 - (4.2 - 2.5) * np.linspace(0, 1, n_points) ** 0.8 + np.random.normal(0, 0.01, n_points)
             ).tolist()
 
-            current_vals = (
-                np.full(n_points, -1.5) + np.random.normal(0, 0.02, n_points)
-            ).tolist()
+            current_vals = (np.full(n_points, -1.5) + np.random.normal(0, 0.02, n_points)).tolist()
 
-            temp_vals = (
-                ambient_temp + np.linspace(0, 5, n_points) + np.random.normal(0, 0.3, n_points)
-            ).tolist()
+            temp_vals = (ambient_temp + np.linspace(0, 5, n_points) + np.random.normal(0, 0.3, n_points)).tolist()
 
             for cycle_type in ["charge", "discharge"]:
-                rows.append({
-                    "battery_id": battery_id,
-                    "cycle_number": cycle_num,
-                    "cycle_type": cycle_type,
-                    "ambient_temperature_c": float(ambient_temp),
-                    "voltage_measured_v": voltage,
-                    "current_measured_a": current_vals,
-                    "temperature_measured_c": temp_vals,
-                    "time_s": time_points,
-                    "capacity_ah": float(current_capacity) if cycle_type == "discharge" else None,
-                    "nominal_capacity_ah": float(nominal_capacity),
-                    "internal_resistance_ohm": float(max(0.01, resistance)),
-                    "cycle_duration_s": 3600.0,
-                    "timestamp": base_time + timedelta(hours=(cycle_num - 1) * 4 + (0 if cycle_type == "charge" else 2)),
-                })
+                rows.append(
+                    {
+                        "battery_id": battery_id,
+                        "cycle_number": cycle_num,
+                        "cycle_type": cycle_type,
+                        "ambient_temperature_c": float(ambient_temp),
+                        "voltage_measured_v": voltage,
+                        "current_measured_a": current_vals,
+                        "temperature_measured_c": temp_vals,
+                        "time_s": time_points,
+                        "capacity_ah": float(current_capacity) if cycle_type == "discharge" else None,
+                        "nominal_capacity_ah": float(nominal_capacity),
+                        "internal_resistance_ohm": float(max(0.01, resistance)),
+                        "cycle_duration_s": 3600.0,
+                        "timestamp": base_time
+                        + timedelta(hours=(cycle_num - 1) * 4 + (0 if cycle_type == "charge" else 2)),
+                    }
+                )
 
     return rows
 
@@ -297,23 +336,37 @@ def run_ingestion(spark: SparkSession, raw_data_path: str, output_table: str, us
         device_info = device_lookup.get(row["battery_id"])
         if not device_info:
             continue
-        enriched_rows.append({
-            **row,
-            "device_id": device_info["device_id"],
-            "device_model": device_info["device_model"],
-            "nominal_capacity_ah": row.get("nominal_capacity_ah", 2.0),
-            "ingestion_timestamp": now,
-        })
+        enriched_rows.append(
+            {
+                **row,
+                "device_id": device_info["device_id"],
+                "device_model": device_info["device_model"],
+                "nominal_capacity_ah": row.get("nominal_capacity_ah", 2.0),
+                "ingestion_timestamp": now,
+            }
+        )
 
     # ── Write to Delta ───────────────────────────────────────────────────
     df = spark.createDataFrame([Row(**r) for r in enriched_rows])
 
     # Ensure correct column order
     columns = [
-        "device_id", "device_model", "battery_id", "cycle_number", "cycle_type",
-        "ambient_temperature_c", "voltage_measured_v", "current_measured_a",
-        "temperature_measured_c", "time_s", "capacity_ah", "nominal_capacity_ah",
-        "internal_resistance_ohm", "cycle_duration_s", "timestamp", "ingestion_timestamp",
+        "device_id",
+        "device_model",
+        "battery_id",
+        "cycle_number",
+        "cycle_type",
+        "ambient_temperature_c",
+        "voltage_measured_v",
+        "current_measured_a",
+        "temperature_measured_c",
+        "time_s",
+        "capacity_ah",
+        "nominal_capacity_ah",
+        "internal_resistance_ohm",
+        "cycle_duration_s",
+        "timestamp",
+        "ingestion_timestamp",
     ]
     df = df.select([c for c in columns if c in df.columns])
 
@@ -324,27 +377,33 @@ def run_ingestion(spark: SparkSession, raw_data_path: str, output_table: str, us
     # ── Also write device inventory ──────────────────────────────────────
     random.seed(42)
     inventory_rows = []
-    os_versions = {"iOS": ["17.2", "17.1", "16.7"], "Android": ["14", "13", "12"], "Windows": ["11 23H2", "11 22H2", "10 22H2"]}
+    os_versions = {
+        "iOS": ["17.2", "17.1", "16.7"],
+        "Android": ["14", "13", "12"],
+        "Windows": ["11 23H2", "11 22H2", "10 22H2"],
+    }
     latest_versions = {"iOS": "17.2", "Android": "14", "Windows": "11 23H2"}
 
     for dev in device_map:
         os_type = dev["os_type"]
         os_version = random.choice(os_versions[os_type])
-        inventory_rows.append({
-            "device_id": dev["device_id"],
-            "device_model": dev["device_model"],
-            "manufacturer": dev["manufacturer"],
-            "os_type": os_type,
-            "os_version": os_version,
-            "latest_os_version": latest_versions[os_type],
-            "fleet_name": dev["fleet_name"],
-            "assigned_user": f"user_{dev['device_id'][-4:].lower()}@company.com",
-            "enrollment_date": datetime(2023, 1, 1) + timedelta(days=random.randint(0, 365)),
-            "last_checkin": now - timedelta(hours=random.randint(1, 72)),
-            "mdm_compliant": random.choice(["true", "true", "true", "false"]),
-            "encryption_enabled": random.choice(["true", "true", "true", "false"]),
-            "passcode_set": random.choice(["true", "true", "false"]),
-        })
+        inventory_rows.append(
+            {
+                "device_id": dev["device_id"],
+                "device_model": dev["device_model"],
+                "manufacturer": dev["manufacturer"],
+                "os_type": os_type,
+                "os_version": os_version,
+                "latest_os_version": latest_versions[os_type],
+                "fleet_name": dev["fleet_name"],
+                "assigned_user": f"user_{dev['device_id'][-4:].lower()}@company.com",
+                "enrollment_date": datetime(2023, 1, 1) + timedelta(days=random.randint(0, 365)),
+                "last_checkin": now - timedelta(hours=random.randint(1, 72)),
+                "mdm_compliant": random.choice(["true", "true", "true", "false"]),
+                "encryption_enabled": random.choice(["true", "true", "true", "false"]),
+                "passcode_set": random.choice(["true", "true", "false"]),
+            }
+        )
 
     inv_df = spark.createDataFrame([Row(**r) for r in inventory_rows])
     inv_table = output_table.rsplit(".", 1)[0] + ".device_inventory"
@@ -367,8 +426,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     spark = (
-        SparkSession.builder
-        .appName("FleetPulse-BatteryIngestion")
+        SparkSession.builder.appName("FleetPulse-BatteryIngestion")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .getOrCreate()

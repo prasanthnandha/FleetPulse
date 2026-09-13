@@ -80,16 +80,18 @@ def evaluate_model_on_holdout(
 
         # Error distribution analysis
         errors = y_holdout.values - y_pred
-        metrics.update({
-            "error_mean": float(np.mean(errors)),
-            "error_std": float(np.std(errors)),
-            "error_p95": float(np.percentile(np.abs(errors), 95)),
-            "error_max": float(np.max(np.abs(errors))),
-        })
+        metrics.update(
+            {
+                "error_mean": float(np.mean(errors)),
+                "error_std": float(np.std(errors)),
+                "error_p95": float(np.percentile(np.abs(errors), 95)),
+                "error_max": float(np.max(np.abs(errors))),
+            }
+        )
 
     elif model_type == "anomaly":
         # Isolation Forest: predictions are 1 (normal) or -1 (anomaly)
-        n_anomalies = int((y_pred == -1).sum()) if hasattr(y_pred, '__len__') else 0
+        n_anomalies = int((y_pred == -1).sum()) if hasattr(y_pred, "__len__") else 0
         metrics = {
             "num_anomalies": n_anomalies,
             "anomaly_rate": float(n_anomalies / len(y_pred)) if len(y_pred) > 0 else 0,
@@ -109,6 +111,7 @@ def compare_models(experiment_name: str, feature_table: str, use_spark: bool = T
     # Load data
     if use_spark:
         from pyspark.sql import SparkSession
+
         spark = SparkSession.builder.appName("FleetPulse-Evaluate").getOrCreate()
         if "." in feature_table:
             df = spark.table(feature_table).toPandas()
@@ -135,10 +138,10 @@ def compare_models(experiment_name: str, feature_table: str, use_spark: bool = T
 
     _, X_holdout, _, y_holdout, features = prepare_data(df, target_col, test_size=0.2)
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Model Comparison — {experiment_name}")
     print(f"Holdout size: {len(X_holdout)} samples")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     comparison = []
     for _, run in runs_df.iterrows():
@@ -147,11 +150,13 @@ def compare_models(experiment_name: str, feature_table: str, use_spark: bool = T
 
         try:
             metrics = evaluate_model_on_holdout(model_uri, X_holdout, y_holdout)
-            comparison.append({
-                "run_id": run_id[:8],
-                "run_name": run.get("tags.mlflow.runName", ""),
-                **metrics,
-            })
+            comparison.append(
+                {
+                    "run_id": run_id[:8],
+                    "run_name": run.get("tags.mlflow.runName", ""),
+                    **metrics,
+                }
+            )
         except Exception as e:
             print(f"  Skipping run {run_id[:8]}: {e}")
 

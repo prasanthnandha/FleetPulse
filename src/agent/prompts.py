@@ -60,7 +60,6 @@ BEHAVIOR & RESPONSE GUIDELINES
 """
 
 
-
 TOOL_DEFINITIONS = [
     {
         "name": "get_fleet_prediction",
@@ -113,7 +112,18 @@ TOOL_DEFINITIONS = [
                 "predicted_failure_component": {
                     "type": "string",
                     "description": "The component predicted to fail (e.g., 'battery', 'display', 'charging_port', 'logic_board').",
-                    "enum": ["battery", "display", "logic_board", "charging_port", "camera_module", "speaker", "antenna", "storage", "keyboard", "trackpad"],
+                    "enum": [
+                        "battery",
+                        "display",
+                        "logic_board",
+                        "charging_port",
+                        "camera_module",
+                        "speaker",
+                        "antenna",
+                        "storage",
+                        "keyboard",
+                        "trackpad",
+                    ],
                 },
             },
             "required": ["device_model", "predicted_failure_component"],

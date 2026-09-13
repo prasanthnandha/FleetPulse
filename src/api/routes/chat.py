@@ -24,6 +24,7 @@ def _get_or_create_agent(session_id: str):
     """Get or create an agent for a session."""
     if session_id not in _sessions:
         from src.agent.agent import FleetPulseAgent
+
         _sessions[session_id] = {
             "agent": FleetPulseAgent(),
             "history": [],
@@ -56,8 +57,7 @@ async def chat(request: ChatRequest):
             for tc in result.get("tool_calls", [])
         ],
         tool_results=[
-            {"tool": tr["tool"], "result": tr["result"], "round": tr["round"]}
-            for tr in result.get("tool_results", [])
+            {"tool": tr["tool"], "result": tr["result"], "round": tr["round"]} for tr in result.get("tool_results", [])
         ],
     )
 
@@ -91,18 +91,24 @@ async def chat_stream(request: ChatRequest):
                 elif event_type == "tool_call":
                     yield {
                         "event": "tool_call",
-                        "data": json.dumps({
-                            "tool": event.get("tool", ""),
-                            "arguments": event.get("arguments", {}),
-                        }, default=str),
+                        "data": json.dumps(
+                            {
+                                "tool": event.get("tool", ""),
+                                "arguments": event.get("arguments", {}),
+                            },
+                            default=str,
+                        ),
                     }
                 elif event_type == "tool_result":
                     yield {
                         "event": "tool_result",
-                        "data": json.dumps({
-                            "tool": event.get("tool", ""),
-                            "result": event.get("result", {}),
-                        }, default=str),
+                        "data": json.dumps(
+                            {
+                                "tool": event.get("tool", ""),
+                                "result": event.get("result", {}),
+                            },
+                            default=str,
+                        ),
                     }
                 elif event_type == "done":
                     full_response = event.get("full_response", "")
@@ -129,10 +135,7 @@ async def chat_history(session_id: str):
     if not session:
         return []
 
-    return [
-        ChatHistoryItem(role=msg["role"], content=msg["content"])
-        for msg in session.get("history", [])
-    ]
+    return [ChatHistoryItem(role=msg["role"], content=msg["content"]) for msg in session.get("history", [])]
 
 
 @router.delete("/session/{session_id}")

@@ -58,7 +58,9 @@ class BaseLLMAdapter(ABC):
         ...
 
     @abstractmethod
-    def stream_chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> Generator[str, None, None]:
+    def stream_chat(
+        self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs
+    ) -> Generator[str, None, None]:
         """Stream a chat completion response (yields text chunks)."""
         ...
 
@@ -67,11 +69,13 @@ class BaseLLMAdapter(ABC):
 # Anthropic Adapter
 # ==============================================================================
 
+
 class AnthropicAdapter(BaseLLMAdapter):
     """Adapter for Anthropic Claude API with tool calling support."""
 
     def __init__(self, api_key: str | None = None, model: str = "claude-sonnet-4-20250514"):
         import anthropic
+
         self.client = anthropic.Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
         self.model = model
 
@@ -81,11 +85,13 @@ class AnthropicAdapter(BaseLLMAdapter):
             return None
         anthropic_tools = []
         for tool in tools:
-            anthropic_tools.append({
-                "name": tool["name"],
-                "description": tool.get("description", ""),
-                "input_schema": tool.get("parameters", {}),
-            })
+            anthropic_tools.append(
+                {
+                    "name": tool["name"],
+                    "description": tool.get("description", ""),
+                    "input_schema": tool.get("parameters", {}),
+                }
+            )
         return anthropic_tools
 
     def _convert_messages(self, messages: list[LLMMessage]) -> tuple[str | None, list[dict]]:
@@ -99,25 +105,33 @@ class AnthropicAdapter(BaseLLMAdapter):
                 continue
 
             if msg.role == "tool":
-                api_messages.append({
-                    "role": "user",
-                    "content": [{
-                        "type": "tool_result",
-                        "tool_use_id": msg.tool_call_id,
-                        "content": msg.content,
-                    }],
-                })
+                api_messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": msg.tool_call_id,
+                                "content": msg.content,
+                            }
+                        ],
+                    }
+                )
             elif msg.role == "assistant" and msg.tool_calls:
                 content = []
                 if msg.content:
                     content.append({"type": "text", "text": msg.content})
                 for tc in msg.tool_calls:
-                    content.append({
-                        "type": "tool_use",
-                        "id": tc["id"],
-                        "name": tc["function"]["name"],
-                        "input": json.loads(tc["function"]["arguments"]) if isinstance(tc["function"]["arguments"], str) else tc["function"]["arguments"],
-                    })
+                    content.append(
+                        {
+                            "type": "tool_use",
+                            "id": tc["id"],
+                            "name": tc["function"]["name"],
+                            "input": json.loads(tc["function"]["arguments"])
+                            if isinstance(tc["function"]["arguments"], str)
+                            else tc["function"]["arguments"],
+                        }
+                    )
                 api_messages.append({"role": "assistant", "content": content})
             else:
                 api_messages.append({"role": msg.role, "content": msg.content})
@@ -147,14 +161,16 @@ class AnthropicAdapter(BaseLLMAdapter):
             if block.type == "text":
                 content += block.text
             elif block.type == "tool_use":
-                tool_calls.append({
-                    "id": block.id,
-                    "type": "function",
-                    "function": {
-                        "name": block.name,
-                        "arguments": json.dumps(block.input),
-                    },
-                })
+                tool_calls.append(
+                    {
+                        "id": block.id,
+                        "type": "function",
+                        "function": {
+                            "name": block.name,
+                            "arguments": json.dumps(block.input),
+                        },
+                    }
+                )
 
         finish_reason = "tool_use" if response.stop_reason == "tool_use" else "stop"
 
@@ -168,7 +184,9 @@ class AnthropicAdapter(BaseLLMAdapter):
             },
         )
 
-    def stream_chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> Generator[str, None, None]:
+    def stream_chat(
+        self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs
+    ) -> Generator[str, None, None]:
         system_msg, api_messages = self._convert_messages(messages)
         anthropic_tools = self._convert_tools(tools)
 
@@ -190,6 +208,7 @@ class AnthropicAdapter(BaseLLMAdapter):
 # OpenAI-compatible Adapter
 # ==============================================================================
 
+
 class OpenAIAdapter(BaseLLMAdapter):
     """Adapter for OpenAI and OpenAI-compatible APIs."""
 
@@ -204,13 +223,13 @@ class OpenAIAdapter(BaseLLMAdapter):
         self.model = model
         try:
             from openai import OpenAI
+
             self.client = OpenAI(
                 api_key=self.api_key or "dummy-key",
                 base_url=base_url,
             )
         except ImportError:
             self.client = None
-
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict]:
         api_messages = []
@@ -246,14 +265,16 @@ class OpenAIAdapter(BaseLLMAdapter):
         tool_calls = []
         if choice.message.tool_calls:
             for tc in choice.message.tool_calls:
-                tool_calls.append({
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                })
+                tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                )
 
         return LLMResponse(
             content=choice.message.content,
@@ -262,10 +283,14 @@ class OpenAIAdapter(BaseLLMAdapter):
             usage={
                 "input_tokens": response.usage.prompt_tokens,
                 "output_tokens": response.usage.completion_tokens,
-            } if response.usage else {},
+            }
+            if response.usage
+            else {},
         )
 
-    def stream_chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> Generator[str, None, None]:
+    def stream_chat(
+        self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs
+    ) -> Generator[str, None, None]:
         api_messages = self._convert_messages(messages)
 
         stream = self.client.chat.completions.create(
@@ -283,6 +308,7 @@ class OpenAIAdapter(BaseLLMAdapter):
 # ==============================================================================
 # Factory
 # ==============================================================================
+
 
 def create_llm_adapter(
     provider: str | None = None,
@@ -310,6 +336,7 @@ def create_llm_adapter(
         if not host or not token:
             try:
                 from databricks.sdk import WorkspaceClient
+
                 w = WorkspaceClient()
                 host = host or (w.config.host if hasattr(w.config, "host") else "")
                 token = token or (w.config.token if hasattr(w.config, "token") else "")

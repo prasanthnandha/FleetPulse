@@ -60,15 +60,10 @@ class TestTransformLogic:
         unpatched_cves = 0
 
         patch_score = max(0.0, 100.0 - days_since_patch * 1.5)  # 85
-        os_score = max(0.0, 100.0 - os_version_lag * 20.0)      # 100
-        vuln_score = max(0.0, 100.0 - unpatched_cves * 15.0)    # 100
-        sec_score = 50.0 + 50.0                                 # 100 (encryption + passcode both True)
+        os_score = max(0.0, 100.0 - os_version_lag * 20.0)  # 100
+        vuln_score = max(0.0, 100.0 - unpatched_cves * 15.0)  # 100
+        sec_score = 50.0 + 50.0  # 100 (encryption + passcode both True)
 
-        total_score = (
-            patch_score * 0.25
-            + os_score * 0.25
-            + vuln_score * 0.30
-            + sec_score * 0.20
-        )
+        total_score = patch_score * 0.25 + os_score * 0.25 + vuln_score * 0.30 + sec_score * 0.20
         # 85*0.25 + 100*0.25 + 100*0.3 + 100*0.2 = 21.25 + 25 + 30 + 20 = 96.25
         assert pytest.approx(total_score, abs=1e-2) == 96.25

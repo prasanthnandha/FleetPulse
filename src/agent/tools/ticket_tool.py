@@ -42,44 +42,50 @@ class TicketTool:
             "status": "Draft",
             "priority": priority,
             "type": "Preventive Maintenance" if rul_days and rul_days > 7 else "Urgent Repair",
-
             "device": {
                 "device_id": device_id,
                 "device_model": device_model,
                 "fleet": fleet,
                 "failing_component": component,
             },
-
             "prediction": {
                 "issue_summary": issue_summary,
                 "remaining_useful_life_days": rul_days,
                 "urgency": self._urgency_label(rul_days),
             },
-
             "repair_details": {
                 "part_number": part_number,
                 "supplier": supplier,
                 "estimated_repair_time_hours": repair_time,
                 "estimated_cost_usd": cost,
             },
-
             "actions": [
-                f"1. Order replacement {component.replace('_', ' ')} (Part: {part_number or 'TBD'})" if part_number else f"1. Identify replacement {component.replace('_', ' ')} part",
+                f"1. Order replacement {component.replace('_', ' ')} (Part: {part_number or 'TBD'})"
+                if part_number
+                else f"1. Identify replacement {component.replace('_', ' ')} part",
                 f"2. Schedule {repair_time or '?'}-hour repair window with device owner",
                 "3. Back up device data before repair",
                 f"4. Perform {component.replace('_', ' ')} replacement following service manual procedure",
                 "5. Run post-repair diagnostics and MDM compliance check",
                 "6. Return device to user and close ticket",
             ],
-
             "estimated_downtime_hours": repair_time or 2.0,
             "estimated_cost_usd": cost,
             "additional_notes": notes,
-
             "formatted_summary": self._format_ticket_summary(
-                ticket_id, priority, device_id, device_model, fleet,
-                issue_summary, component, rul_days, part_number, supplier,
-                repair_time, cost, notes,
+                ticket_id,
+                priority,
+                device_id,
+                device_model,
+                fleet,
+                issue_summary,
+                component,
+                rul_days,
+                part_number,
+                supplier,
+                repair_time,
+                cost,
+                notes,
             ),
         }
 
@@ -112,9 +118,19 @@ class TicketTool:
 
     @staticmethod
     def _format_ticket_summary(
-        ticket_id, priority, device_id, device_model, fleet,
-        issue_summary, component, rul_days, part_number, supplier,
-        repair_time, cost, notes,
+        ticket_id,
+        priority,
+        device_id,
+        device_model,
+        fleet,
+        issue_summary,
+        component,
+        rul_days,
+        part_number,
+        supplier,
+        repair_time,
+        cost,
+        notes,
     ) -> str:
         lines = [
             "═══════════════════════════════════════════════",
@@ -143,10 +159,12 @@ class TicketTool:
             "",
         ]
         if notes:
-            lines.extend([
-                "  ── Notes ───────────────────────────────────",
-                f"  {notes}",
-                "",
-            ])
+            lines.extend(
+                [
+                    "  ── Notes ───────────────────────────────────",
+                    f"  {notes}",
+                    "",
+                ]
+            )
         lines.append("═══════════════════════════════════════════════")
         return "\n".join(lines)

@@ -120,6 +120,7 @@ class TestAgentTools:
     def test_databricks_llm_adapter_factory(self):
         """Verify create_llm_adapter instantiates Databricks Foundation Model adapter."""
         from src.agent.llm_adapter import OpenAIAdapter, create_llm_adapter
+
         adapter = create_llm_adapter(
             provider="databricks",
             host="https://adb-123456789.cloud.databricks.com",
@@ -129,4 +130,3 @@ class TestAgentTools:
         assert isinstance(adapter, OpenAIAdapter)
         assert adapter.model == "databricks-meta-llama-3-1-70b-instruct"
         assert "serving-endpoints" in str(adapter.base_url)
-

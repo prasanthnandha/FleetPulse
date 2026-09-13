@@ -68,15 +68,22 @@ class PredictionTool:
     def _generate_synthetic_features(self) -> pd.DataFrame:
         """Generate synthetic feature data for development/demo."""
         import numpy as np
+
         np.random.seed(42)
 
         devices = []
         fleet_names = ["Sales", "Engineering", "Executive", "Support", "Marketing", "Operations"]
         device_models = [
-            "iPhone 15 Pro", "iPhone 14", "iPhone 13",
-            "Galaxy S24", "Galaxy S23", "Galaxy A54",
-            "Pixel 8 Pro", "Pixel 7a",
-            "Surface Pro 10", "ThinkPad X1 Carbon Gen 11",
+            "iPhone 15 Pro",
+            "iPhone 14",
+            "iPhone 13",
+            "Galaxy S24",
+            "Galaxy S23",
+            "Galaxy A54",
+            "Pixel 8 Pro",
+            "Pixel 7a",
+            "Surface Pro 10",
+            "ThinkPad X1 Carbon Gen 11",
         ]
 
         for i in range(34):
@@ -110,7 +117,9 @@ class PredictionTool:
             }
             # Set risk tier based on score
             rs = device["overall_risk_score"]
-            device["risk_tier"] = "healthy" if rs <= 25 else "watch" if rs <= 50 else "warning" if rs <= 75 else "critical"
+            device["risk_tier"] = (
+                "healthy" if rs <= 25 else "watch" if rs <= 50 else "warning" if rs <= 75 else "critical"
+            )
 
             devices.append(device)
 
@@ -192,7 +201,8 @@ class PredictionTool:
         """Format prediction results for the agent."""
         # Filter by time horizon
         at_risk = [
-            d for d in devices
+            d
+            for d in devices
             if d.get("remaining_useful_life_days", 9999) <= time_horizon_days
             or d.get("days_to_non_compliance", 9999) <= time_horizon_days
         ]

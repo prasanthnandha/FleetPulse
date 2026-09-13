@@ -85,9 +85,7 @@ class FleetPulseAgent:
         """
         # Scrub PII from incoming prompt
         sanitized_user_message = sanitize_pii(user_message)
-        self._conversation_history.append(
-            LLMMessage(role="user", content=sanitized_user_message)
-        )
+        self._conversation_history.append(LLMMessage(role="user", content=sanitized_user_message))
 
         all_tool_calls = []
         all_tool_results = []
@@ -106,9 +104,7 @@ class FleetPulseAgent:
                 _, grounded_text = validate_anti_hallucination(raw_text, all_tool_results)
                 final_text = sanitize_pii(grounded_text)
 
-                self._conversation_history.append(
-                    LLMMessage(role="assistant", content=final_text)
-                )
+                self._conversation_history.append(LLMMessage(role="assistant", content=final_text))
                 return {
                     "response": final_text,
                     "tool_calls": all_tool_calls,
@@ -135,21 +131,25 @@ class FleetPulseAgent:
                 except json.JSONDecodeError:
                     tool_args = {}
 
-                all_tool_calls.append({
-                    "tool": tool_name,
-                    "arguments": tool_args,
-                    "round": round_num + 1,
-                })
+                all_tool_calls.append(
+                    {
+                        "tool": tool_name,
+                        "arguments": tool_args,
+                        "round": round_num + 1,
+                    }
+                )
 
                 # Execute tool
                 tool_result = self._execute_tool(tool_name, tool_args)
                 tool_result_str = json.dumps(tool_result, indent=2, default=str)
 
-                all_tool_results.append({
-                    "tool": tool_name,
-                    "result": tool_result,
-                    "round": round_num + 1,
-                })
+                all_tool_results.append(
+                    {
+                        "tool": tool_name,
+                        "result": tool_result,
+                        "round": round_num + 1,
+                    }
+                )
 
                 # Add tool result to history
                 self._conversation_history.append(
@@ -166,9 +166,7 @@ class FleetPulseAgent:
             tools=None,  # No tools = force text response
         )
 
-        self._conversation_history.append(
-            LLMMessage(role="assistant", content=final_response.content or "")
-        )
+        self._conversation_history.append(LLMMessage(role="assistant", content=final_response.content or ""))
 
         return {
             "response": final_response.content or "",
@@ -189,9 +187,7 @@ class FleetPulseAgent:
         """
         # Scrub PII from incoming prompt
         sanitized_user_message = sanitize_pii(user_message)
-        self._conversation_history.append(
-            LLMMessage(role="user", content=sanitized_user_message)
-        )
+        self._conversation_history.append(LLMMessage(role="user", content=sanitized_user_message))
 
         full_response = ""
         executed_tool_results = []
@@ -209,14 +205,12 @@ class FleetPulseAgent:
                 _, grounded_text = validate_anti_hallucination(raw_text, executed_tool_results)
                 final_text = sanitize_pii(grounded_text)
 
-                self._conversation_history.append(
-                    LLMMessage(role="assistant", content=final_text)
-                )
+                self._conversation_history.append(LLMMessage(role="assistant", content=final_text))
 
                 # Stream the sanitized response text chunk by chunk
                 chunk_size = 20
                 for i in range(0, len(final_text), chunk_size):
-                    yield {"type": "text", "content": final_text[i:i + chunk_size]}
+                    yield {"type": "text", "content": final_text[i : i + chunk_size]}
                 full_response = final_text
 
                 yield {"type": "done", "full_response": full_response}
@@ -263,13 +257,11 @@ class FleetPulseAgent:
 
         # Force final response
         final = self.llm.chat(messages=self._conversation_history, tools=None)
-        self._conversation_history.append(
-            LLMMessage(role="assistant", content=final.content or "")
-        )
+        self._conversation_history.append(LLMMessage(role="assistant", content=final.content or ""))
         text = final.content or ""
         chunk_size = 20
         for i in range(0, len(text), chunk_size):
-            yield {"type": "text", "content": text[i:i + chunk_size]}
+            yield {"type": "text", "content": text[i : i + chunk_size]}
         full_response += text
         yield {"type": "done", "full_response": full_response}
 

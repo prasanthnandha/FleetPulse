@@ -25,10 +25,12 @@ async def fleet_overview(fleet_name: str | None = None):
     Get fleet-level risk overview with summary statistics.
     If fleet_name is provided, filters to that fleet only.
     """
-    result = _prediction_tool.execute({
-        "fleet_name": fleet_name,
-        "time_horizon_days": 30,
-    })
+    result = _prediction_tool.execute(
+        {
+            "fleet_name": fleet_name,
+            "time_horizon_days": 30,
+        }
+    )
 
     devices = result.get("devices", [])
     risk_dist = result.get("risk_distribution", {})
@@ -39,29 +41,29 @@ async def fleet_overview(fleet_name: str | None = None):
     compliance_scores = [d.get("compliance_score", 50) for d in devices if d.get("compliance_score") is not None]
 
     needing_attention = sum(
-        1 for d in devices
-        if d.get("remaining_useful_life_days", 999) < 30
-        or d.get("overall_risk_score", 0) > 70
+        1 for d in devices if d.get("remaining_useful_life_days", 999) < 30 or d.get("overall_risk_score", 0) > 70
     )
 
     # Build DeviceHealth objects for top risk devices
     top_devices = []
     for d in sorted(devices, key=lambda x: x.get("overall_risk_score", 0), reverse=True)[:5]:
-        top_devices.append(DeviceHealth(
-            device_id=d.get("device_id", ""),
-            device_model=d.get("device_model", ""),
-            fleet_name=d.get("fleet_name", ""),
-            risk_tier=d.get("risk_tier", "healthy"),
-            overall_risk_score=d.get("overall_risk_score", 0),
-            battery_health_score=d.get("battery_health_score"),
-            compliance_score=d.get("compliance_score"),
-            remaining_useful_life_days=d.get("remaining_useful_life_days"),
-            days_to_non_compliance=d.get("days_to_non_compliance"),
-            capacity_fade_pct=d.get("capacity_fade_pct"),
-            cycle_count=d.get("cycle_count"),
-            days_since_last_patch=d.get("days_since_last_patch"),
-            driving_factors=d.get("driving_factors", []),
-        ))
+        top_devices.append(
+            DeviceHealth(
+                device_id=d.get("device_id", ""),
+                device_model=d.get("device_model", ""),
+                fleet_name=d.get("fleet_name", ""),
+                risk_tier=d.get("risk_tier", "healthy"),
+                overall_risk_score=d.get("overall_risk_score", 0),
+                battery_health_score=d.get("battery_health_score"),
+                compliance_score=d.get("compliance_score"),
+                remaining_useful_life_days=d.get("remaining_useful_life_days"),
+                days_to_non_compliance=d.get("days_to_non_compliance"),
+                capacity_fade_pct=d.get("capacity_fade_pct"),
+                cycle_count=d.get("cycle_count"),
+                days_since_last_patch=d.get("days_since_last_patch"),
+                driving_factors=d.get("driving_factors", []),
+            )
+        )
 
     return FleetOverview(
         total_devices=len(devices),
@@ -78,16 +80,21 @@ async def fleet_overview(fleet_name: str | None = None):
 async def list_devices(
     fleet_name: str | None = None,
     risk_tier: str | None = None,
-    sort_by: str = Query(default="overall_risk_score", regex="^(overall_risk_score|remaining_useful_life_days|compliance_score|battery_health_score)$"),
+    sort_by: str = Query(
+        default="overall_risk_score",
+        regex="^(overall_risk_score|remaining_useful_life_days|compliance_score|battery_health_score)$",
+    ),
     order: str = Query(default="desc", regex="^(asc|desc)$"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
     """List devices with health scores, optionally filtered and sorted."""
-    result = _prediction_tool.execute({
-        "fleet_name": fleet_name,
-        "risk_tier_filter": risk_tier,
-    })
+    result = _prediction_tool.execute(
+        {
+            "fleet_name": fleet_name,
+            "risk_tier_filter": risk_tier,
+        }
+    )
 
     devices = result.get("devices", [])
 
@@ -96,7 +103,7 @@ async def list_devices(
     devices.sort(key=lambda d: d.get(sort_by, 0) or 0, reverse=reverse)
 
     # Paginate
-    devices = devices[offset:offset + limit]
+    devices = devices[offset : offset + limit]
 
     return [
         DeviceHealth(
@@ -126,6 +133,7 @@ async def get_device(device_id: str):
 
     if not devices:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail=f"Device {device_id} not found")
 
     d = devices[0]
@@ -176,13 +184,15 @@ async def fleet_trends(
         critical = max(0, int(base_critical + drift * 0.05 + np.random.normal(0, 0.8)))
         warning = max(0, int(base_warning + drift * 0.08 + np.random.normal(0, 1)))
 
-        trend_data.append(FleetTrendPoint(
-            date=date.strftime("%Y-%m-%d"),
-            avg_risk_score=round(avg_risk, 1),
-            critical_count=critical,
-            warning_count=warning,
-            total_devices=total_devices,
-        ))
+        trend_data.append(
+            FleetTrendPoint(
+                date=date.strftime("%Y-%m-%d"),
+                avg_risk_score=round(avg_risk, 1),
+                critical_count=critical,
+                warning_count=warning,
+                total_devices=total_devices,
+            )
+        )
 
     return FleetTrendResponse(
         fleet_name=fleet_name,

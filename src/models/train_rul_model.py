@@ -144,7 +144,8 @@ def train_xgboost_model(
         # Train model
         model = xgb.XGBRegressor(**params)
         model.fit(
-            X_train, y_train,
+            X_train,
+            y_train,
             eval_set=[(X_test, y_test)],
             verbose=50,
         )
@@ -186,7 +187,7 @@ def train_xgboost_model(
 
         # Log top 5 features as parameters for easy comparison
         for i, (feat, imp) in enumerate(list(sorted_importance.items())[:5]):
-            mlflow.log_metric(f"importance_top{i+1}_{feat}", imp)
+            mlflow.log_metric(f"importance_top{i + 1}_{feat}", imp)
 
         # Log model
         mlflow.xgboost.log_model(
@@ -205,7 +206,7 @@ def train_xgboost_model(
             except Exception as e:
                 print(f"Model registration skipped (may need Unity Catalog): {e}")
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Target: {target_name}")
         print(f"Run ID: {run.info.run_id}")
         print(f"Test RMSE: {test_metrics['test_rmse']:.4f}")
@@ -213,7 +214,7 @@ def train_xgboost_model(
         print(f"Test R²:   {test_metrics['test_r2']:.4f}")
         print(f"CV RMSE:   {cv_rmse:.4f}")
         print(f"Top features: {list(sorted_importance.keys())[:5]}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         return {
             "model": model,
@@ -236,6 +237,7 @@ def run_training(
     # ── Load feature data ────────────────────────────────────────────────
     if use_spark:
         from pyspark.sql import SparkSession
+
         spark = SparkSession.builder.appName("FleetPulse-RULTraining").getOrCreate()
         if "." in feature_table:
             df = spark.table(feature_table).toPandas()
@@ -259,9 +261,9 @@ def run_training(
             print(f"Skipping {target} — column not found")
             continue
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Training model for: {target}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         X_train, X_test, y_train, y_test, features = prepare_data(df, target)
 
@@ -270,7 +272,10 @@ def run_training(
             continue
 
         result = train_xgboost_model(
-            X_train, y_train, X_test, y_test,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
             feature_names=features,
             target_name=target,
             experiment_name=experiment_name,

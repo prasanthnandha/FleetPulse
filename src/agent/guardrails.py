@@ -28,7 +28,9 @@ PATTERNS = {
     # IMEI numbers (15 digits)
     "imei": re.compile(r"\bIMEI[:\s]+[0-9]{15}\b", re.IGNORECASE),
     # IP Addresses (IPv4)
-    "ipv4": re.compile(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"),
+    "ipv4": re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+    ),
 }
 
 
@@ -126,10 +128,7 @@ def validate_anti_hallucination(response_text: str, tool_results: list[dict]) ->
         if part_upper not in verified_part_numbers:
             hallucinations.append(part)
             # Replace hallucinated part number with escalation notice
-            corrected_text = corrected_text.replace(
-                part,
-                "[Unverified Part — Escalate to IT Hardware Support]"
-            )
+            corrected_text = corrected_text.replace(part, "[Unverified Part — Escalate to IT Hardware Support]")
 
     if hallucinations:
         # Append anti-hallucination disclosure if fabricated part was detected

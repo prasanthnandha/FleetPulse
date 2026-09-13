@@ -50,6 +50,7 @@ ui_dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__fi
 if os.path.exists(ui_dist_path):
     app.mount("/", StaticFiles(directory=ui_dist_path, html=True), name="ui")
 else:
+
     @app.get("/")
     async def root():
         return {

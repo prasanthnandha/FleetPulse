@@ -127,14 +127,16 @@ def fetch_cves_from_nvd(
             published = cve.get("published", "")
             modified = cve.get("lastModified", "")
 
-            all_cves.append({
-                "cve_id": cve_id,
-                "published_date": published,
-                "last_modified_date": modified,
-                "description": description[:500],  # Truncate long descriptions
-                "cvss_score": cvss_score,
-                "severity": _get_severity(cvss_score),
-            })
+            all_cves.append(
+                {
+                    "cve_id": cve_id,
+                    "published_date": published,
+                    "last_modified_date": modified,
+                    "description": description[:500],  # Truncate long descriptions
+                    "cvss_score": cvss_score,
+                    "severity": _get_severity(cvss_score),
+                }
+            )
 
         # Pagination
         total_results = data.get("totalResults", 0)
@@ -193,18 +195,22 @@ def generate_synthetic_cve_data(num_cves: int = 150) -> list[dict]:
             "Windows": [f"{v}" for v in ["10 22H2", "11 22H2", "11 23H2"]],
         }
 
-        cves.append({
-            "cve_id": f"CVE-{pub_date.year}-{10000 + i}",
-            "published_date": pub_date,
-            "last_modified_date": pub_date + timedelta(days=random.randint(1, 30)),
-            "description": random.choice(cve_templates[os_type]),
-            "severity": _get_severity(cvss_score),
-            "cvss_score": cvss_score,
-            "affected_os": os_type,
-            "affected_versions": random.sample(version_ranges[os_type], k=random.randint(1, len(version_ranges[os_type]))),
-            "patch_available": "true" if patch_delay else "false",
-            "patch_date": (pub_date + timedelta(days=patch_delay)) if patch_delay else None,
-        })
+        cves.append(
+            {
+                "cve_id": f"CVE-{pub_date.year}-{10000 + i}",
+                "published_date": pub_date,
+                "last_modified_date": pub_date + timedelta(days=random.randint(1, 30)),
+                "description": random.choice(cve_templates[os_type]),
+                "severity": _get_severity(cvss_score),
+                "cvss_score": cvss_score,
+                "affected_os": os_type,
+                "affected_versions": random.sample(
+                    version_ranges[os_type], k=random.randint(1, len(version_ranges[os_type]))
+                ),
+                "patch_available": "true" if patch_delay else "false",
+                "patch_date": (pub_date + timedelta(days=patch_delay)) if patch_delay else None,
+            }
+        )
 
     return cves
 
@@ -283,8 +289,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     spark = (
-        SparkSession.builder
-        .appName("FleetPulse-CVEIngestion")
+        SparkSession.builder.appName("FleetPulse-CVEIngestion")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .getOrCreate()
