@@ -1,0 +1,28 @@
+# ==============================================================================
+# FleetPulse — Bundle Permissions & Access Control
+# ==============================================================================
+
+permissions:
+  - level: CAN_VIEW
+    group_name: users
+  - level: CAN_MANAGE
+    group_name: admins
+
+# Resource-specific permissions applied to target environments
+targets:
+  prod:
+    permissions:
+      - level: CAN_RUN
+        group_name: "data-engineers"
+      - level: CAN_MANAGE
+        group_name: "ml-platform-admins"
+
+  staging:
+    permissions:
+      - level: CAN_MANAGE
+        group_name: "data-engineers"
+
+  dev:
+    permissions:
+      - level: CAN_MANAGE
+        user_name: "${current_user.name}"

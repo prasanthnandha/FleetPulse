@@ -1,0 +1,152 @@
+resources:
+  # ============================================================================
+  # Databricks Workflows / Jobs
+  # ============================================================================
+  jobs:
+    # 1. Feature Engineering Pipeline (Daily Schedule)
+    fleetpulse_feature_pipeline:
+      name: "[${bundle.target}] FleetPulse Feature Pipeline"
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?" # 02:00 UTC daily
+        timezone_id: "UTC"
+        pause_status: "UNPAUSED"
+      tasks:
+        - task_key: "ingest_battery_data"
+          spark_python_task:
+            python_file: "src/pipelines/ingest_battery_data.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: &default_cluster
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_D4ds_v5"
+            num_workers: 2
+            spark_conf:
+              "spark.databricks.delta.preview.enabled": "true"
+
+        - task_key: "ingest_cve_feed"
+          spark_python_task:
+            python_file: "src/pipelines/ingest_cve_feed.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: *default_cluster
+
+        - task_key: "compute_features"
+          depends_on:
+            - task_key: "ingest_battery_data"
+            - task_key: "ingest_cve_feed"
+          spark_python_task:
+            python_file: "src/pipelines/feature_engineering.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: *default_cluster
+
+    # 2. Predictive Models Training (Triggered / Weekly)
+    fleetpulse_model_training:
+      name: "[${bundle.target}] FleetPulse Model Training"
+      schedule:
+        quartz_cron_expression: "0 0 4 ? * SUN" # Weekly Sundays at 04:00 UTC
+        timezone_id: "UTC"
+        pause_status: "PAUSED"
+      tasks:
+        - task_key: "train_rul_regressor"
+          spark_python_task:
+            python_file: "src/models/train_rul_model.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+              - "--register"
+          new_cluster: *default_cluster
+
+        - task_key: "train_anomaly_detector"
+          spark_python_task:
+            python_file: "src/models/train_anomaly_model.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+              - "--register"
+          new_cluster: *default_cluster
+
+        - task_key: "evaluate_models"
+          depends_on:
+            - task_key: "train_rul_regressor"
+            - task_key: "train_anomaly_detector"
+          spark_python_task:
+            python_file: "src/models/evaluate.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: *default_cluster
+
+    # 3. RAG Corpus Chunking & Vector Search Reindex
+    fleetpulse_rag_reindex:
+      name: "[${bundle.target}] FleetPulse RAG Reindex"
+      tasks:
+        - task_key: "generate_and_chunk"
+          spark_python_task:
+            python_file: "src/rag/chunk_and_embed.py"
+            parameters:
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: *default_cluster
+
+        - task_key: "sync_vector_search"
+          depends_on:
+            - task_key: "generate_and_chunk"
+          spark_python_task:
+            python_file: "src/rag/index_vector_search.py"
+            parameters:
+              - "--endpoint"
+              - "${var.vector_search_endpoint_name}"
+              - "--catalog"
+              - "${var.catalog}"
+              - "--schema"
+              - "${var.schema}"
+          new_cluster: *default_cluster
+
+  # ============================================================================
+  # Model Serving Endpoint Config
+  # ============================================================================
+  model_serving_endpoints:
+    fleetpulse_prediction_endpoint:
+      name: "${var.serving_endpoint_name}"
+      config:
+        served_entities:
+          - entity_name: "${var.catalog}.${var.schema}.rul_predictor"
+            entity_version: "1"
+            workload_size: "Small"
+            scale_to_zero_enabled: true
+          - entity_name: "${var.catalog}.${var.schema}.anomaly_detector"
+            entity_version: "1"
+            workload_size: "Small"
+            scale_to_zero_enabled: true
+      tags:
+        - key: "project"
+          value: "FleetPulse"
+        - key: "env"
+          value: "${bundle.target}"
+
+  # ============================================================================
+  # Databricks Apps (Full-stack UI + API Hosting)
+  # ============================================================================
+  apps:
+    fleetpulse_app:
+      name: "fleetpulse-${bundle.target}"
+      description: "FleetPulse — Enterprise MDM Predictive Dashboard & AI Assistant"
+      source_code_path: "."

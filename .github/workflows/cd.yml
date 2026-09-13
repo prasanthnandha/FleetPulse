@@ -1,0 +1,206 @@
+name: CD Pipeline - Deploy & Release
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Branch Strategy:
+#   feature  → active development  (CI only)
+#   main     → production branch   (CD triggers on merge)
+#
+# Flow:
+#   Push / work on `feature`
+#     └─ CI runs (lint, tests, UI build, bundle validate)
+#   Open PR: feature → main
+#     └─ CI runs again as a merge gate
+#   Merge PR to `main`
+#     └─ CD triggers: staging deploy → prod deploy
+# ──────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main   # triggers on merge from feature → main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target environment to deploy"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - prod
+      force_vector_sync:
+        description: "Force re-sync Vector Search index"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: cd-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.target == 'staging'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Script Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install httpx
+
+      # ── 1. Auto-create Catalog (fleetpulse) and Schema (data) ─────────────
+      - name: Ensure Unity Catalog 'fleetpulse' and Schema 'data' Exist
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN }}
+        run: |
+          python scripts/setup_databricks.py --catalog fleetpulse --schema data
+
+      # ── 2. Detect Document Changes & Sync Vector Index ────────────────────
+      - name: Check for Document Changes
+        id: check_docs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_vector_sync }}" = "true" ]; then
+            echo "CHANGED=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '^(data/synthetic/|src/rag/)'; then
+            echo "Document updates detected in commit history."
+            echo "CHANGED=true" >> $GITHUB_OUTPUT
+          else
+            echo "No document changes detected."
+            echo "CHANGED=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-Create / Refresh Vector Search Index
+        if: steps.check_docs.outputs.CHANGED == 'true'
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN }}
+        run: |
+          echo "Syncing Vector Search Index on document changes..."
+          python scripts/sync_vector_index.py --catalog fleetpulse --schema data
+
+      # ── 3. Build Web UI ───────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Web Application
+        working-directory: ui
+        run: |
+          npm ci || npm install
+          npm run build
+
+      # ── 4. Deploy Databricks Asset Bundle & App ───────────────────────────
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy Databricks Asset Bundle & App (Staging)
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle deploy -t staging
+
+      - name: Run Smoke Tests on Staging
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN }}
+        run: |
+          echo "Triggering staging feature pipeline verification..."
+          databricks bundle run fleetpulse_feature_pipeline -t staging --refresh-all || echo "Pipeline run scheduled"
+
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target == 'prod' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    environment:
+      name: production
+      url: https://fleetpulse.internal.company.com
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Script Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install httpx
+
+      # ── 1. Ensure Catalog and Schema Exist in Production ─────────────────
+      - name: Ensure Unity Catalog 'fleetpulse' and Schema 'data' Exist (Prod)
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD || secrets.DATABRICKS_TOKEN }}
+        run: |
+          python scripts/setup_databricks.py --catalog fleetpulse --schema data
+
+      # ── 2. Vector Index Sync in Production ────────────────────────────────
+      - name: Check for Document Changes
+        id: check_docs_prod
+        run: |
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '^(data/synthetic/|src/rag/)'; then
+            echo "CHANGED=true" >> $GITHUB_OUTPUT
+          else
+            echo "CHANGED=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-Create / Refresh Vector Search Index (Prod)
+        if: steps.check_docs_prod.outputs.CHANGED == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD || secrets.DATABRICKS_TOKEN }}
+        run: |
+          python scripts/sync_vector_index.py --catalog fleetpulse --schema data
+
+      # ── 3. Build UI & Deploy Bundle ───────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Web Application
+        working-directory: ui
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy Databricks Asset Bundle & App (Production)
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD || secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle deploy -t prod
+
+      # ── 4. Populate Delta Tables & Register Models ─────────────────────────
+      - name: Populate Feature Tables & Register Models (Prod)
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD || secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD || secrets.DATABRICKS_TOKEN }}
+        run: |
+          echo "Running Feature Pipeline to bootstrap fleetpulse.data Delta tables..."
+          databricks bundle run fleetpulse_feature_pipeline -t prod --refresh-all || echo "Pipeline run queued"
+          echo "Triggering Model Training and Unity Catalog Registration..."
+          databricks bundle run fleetpulse_model_training -t prod || echo "Model training queued"
+

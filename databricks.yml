@@ -1,0 +1,49 @@
+bundle:
+  name: fleetpulse
+
+include:
+  - bundle/*.yml
+
+variables:
+  catalog:
+    description: "Unity Catalog name"
+    default: "fleetpulse"
+  schema:
+    description: "Schema / database name within the catalog"
+    default: "data"
+  warehouse_id:
+    description: "SQL Warehouse ID for BI and ad-hoc queries"
+    default: "auto"
+  serving_endpoint_name:
+    description: "Databricks Model Serving endpoint name"
+    default: "fleetpulse-prediction"
+  vector_search_endpoint_name:
+    description: "Databricks Vector Search endpoint name"
+    default: "fleetpulse-vs-endpoint"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${current_user.name}/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: "fleetpulse"
+      schema: "data"
+
+  staging:
+    mode: production
+    workspace:
+      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: "fleetpulse"
+      schema: "data"
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: "fleetpulse"
+      schema: "data"
+

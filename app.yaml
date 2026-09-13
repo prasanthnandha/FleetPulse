@@ -1,0 +1,27 @@
+# ==============================================================================
+# Databricks Apps Configuration — FleetPulse
+# ==============================================================================
+# Defines the runtime command, server parameters, and environment configuration
+# for hosting FleetPulse inside the Databricks Workspace via Databricks Apps.
+
+command:
+  - "uvicorn"
+  - "src.api.main:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  - name: "CORS_ORIGINS"
+    value: "*"
+  - name: "LLM_PROVIDER"
+    value: "databricks"
+  - name: "DATABRICKS_MODEL"
+    value: "databricks-meta-llama-3-1-70b-instruct"
+  - name: "MODEL_SERVING_ENDPOINT"
+    value: "fleetpulse-prediction"
+  - name: "VECTOR_SEARCH_ENDPOINT"
+    value: "fleetpulse-vs-endpoint"
+  - name: "VECTOR_SEARCH_INDEX"
+    value: "fleetpulse.rag.document_chunks_index"
