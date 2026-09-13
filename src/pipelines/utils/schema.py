@@ -145,3 +145,6 @@ DOCUMENT_CHUNKS_SCHEMA = StructType(
 Chunked and embedded documents for Vector Search.
 Contains both parts catalog entries and service manual chunks.
 """
+
+# Alias for backward compatibility and test clarity
+DEVICE_HEALTH_FEATURES_SCHEMA = DEVICE_HEALTH_SCHEMA
